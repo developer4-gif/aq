@@ -1,0 +1,43 @@
+# Three services on one Docker network. Services reach each other by name (db, backend).
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    volumes:
+      - pgdata:/var/lib/postgresql/data   # data survives container restarts
+    healthcheck:                          # backend waits until Postgres is really ready
+      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      interval: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    env_file: .env                        # Google keys + session secret
+    environment:
+      DATABASE_URL: postgres://app:app@db:5432/app
+      FRONTEND_URL: http://localhost:5173
+      NODE_ENV: development
+    ports:
+      - "4000:4000"                       # exposed so Postman can hit it directly
+    volumes:
+      - ./backend:/app                    # live-reload on code change
+      - /app/node_modules                 # keep container's node_modules, not host's
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

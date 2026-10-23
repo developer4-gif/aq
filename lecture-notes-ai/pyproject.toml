@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lecture-notes-ai"
+version = "0.1.0"
+description = "Turn a YouTube lecture into hand-drawn 'field notebook' study notes (PDF + HTML) with the AI provider of your choice."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "Lecture Notes AI contributors" }]
+keywords = ["youtube", "lecture", "notes", "study", "llm", "pdf", "transcript"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Education",
+]
+dependencies = [
+    "requests>=2.31",
+    "youtube-transcript-api>=1.0",
+    "yt-dlp",
+    "pymupdf",
+]
+
+[project.optional-dependencies]
+web = ["flask>=3.0", "flask-cors>=4.0", "python-dotenv>=1.0"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+lecture-notes = "notes_engine.__main__:main"
+
+[tool.setuptools]
+packages = ["notes_engine"]
+
+[tool.setuptools.package-data]
+notes_engine = ["templates/*", "templates/vendor/*", "static/fonts/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "backend"]

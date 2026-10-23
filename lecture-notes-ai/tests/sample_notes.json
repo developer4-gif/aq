@@ -1,0 +1,1125 @@
+{
+ "meta": {
+  "title": "Transformers & Attention: why Q·Kᵀ > recurrence",
+  "subtitle": "how a Transformer reads, weighs and predicts — from tokens to the next word",
+  "source_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+  "channel": "Café Lectures — Prof. Ananya Rao",
+  "duration": "1:12:40",
+  "language": "en",
+  "generated_on": "2026-10-23",
+  "model": "gemini/gemini-2.5-flash"
+ },
+ "cover": {
+  "tagline": "a student's own field notebook —",
+  "summary": "Self-attention lets every token look at every other token in one step, so Transformers train in parallel and capture long-range context far better than RNNs. These notes follow the data: tokens, embeddings, Q/K/V attention, heads, the block, training and the model families built on it.",
+  "big_idea": "every token looks at every other token — in parallel!",
+  "toc": [
+   "2. the big picture, tokens in → word out",
+   "3. tokens & embeddings",
+   "4. self-attention, step by step ★",
+   "5. multi-head attention",
+   "6. positional encoding",
+   "7. the Transformer block",
+   "8. training & the loss loop",
+   "9. a short history, 2014 → 2022",
+   "10. model families & scaling",
+   "glossary · the whole picture, recapped"
+  ]
+ },
+ "sections": [
+  {
+   "number": 2,
+   "title": "the big picture",
+   "subtitle": "tokens in, next word out",
+   "timestamp": "03:05",
+   "blocks": [
+    {
+     "type": "paragraph",
+     "text": "Before 2017 most sequence models were **RNNs** that read a sentence one word at a time, carrying a hidden state forward. That made training slow (no parallelism) and long-range memory weak. The Transformer from “Attention Is All You Need” (Vaswani et al., 2017) drops recurrence entirely and uses attention instead."
+    },
+    {
+     "type": "bullets",
+     "items": [
+      "Input text is cut into tokens and each token becomes a vector (an embedding).",
+      "Positional information is added, because attention alone has no sense of word order.",
+      "A stack of identical blocks mixes information between tokens (attention) and then refines each token (feed-forward network).",
+      "A final linear layer + softmax turns the last vector into a probability for every word in the vocabulary."
+     ]
+    },
+    {
+     "type": "callout",
+     "style": "note",
+     "text": "Teacher's one-line summary: “attention is a soft dictionary lookup — each token asks a question, every token offers a key and a value.”"
+    },
+    {
+     "type": "paragraph",
+     "text": "Test of escaping: a model name like <GPT-4> & friends, 5 > 3, and a fake tag <script>alert('x')</script> must be shown as plain text, never executed. Also: naïve, café, Ünïcödé, नमस्ते, ≈, √d, α/β."
+    }
+   ],
+   "diagram": {
+    "type": "flow",
+    "title": "data path through a Transformer",
+    "caption": "one forward pass: parallel over all tokens, repeated N times in the stack",
+    "nodes": [
+     {
+      "id": "in",
+      "label": "tokens",
+      "detail": "“the cat sat”"
+     },
+     {
+      "id": "emb",
+      "label": "embeddings",
+      "detail": "vector per token"
+     },
+     {
+      "id": "pos",
+      "label": "+ position",
+      "detail": "order information"
+     },
+     {
+      "id": "enc",
+      "label": "N × blocks",
+      "detail": "attention + FFN"
+     },
+     {
+      "id": "lin",
+      "label": "linear",
+      "detail": "to vocab size"
+     },
+     {
+      "id": "sm",
+      "label": "softmax",
+      "detail": "probabilities"
+     },
+     {
+      "id": "out",
+      "label": "next word",
+      "detail": "“on”"
+     }
+    ],
+    "edges": [
+     {
+      "from": "in",
+      "to": "emb"
+     },
+     {
+      "from": "emb",
+      "to": "pos"
+     },
+     {
+      "from": "pos",
+      "to": "enc",
+      "label": "sum"
+     },
+     {
+      "from": "enc",
+      "to": "lin"
+     },
+     {
+      "from": "lin",
+      "to": "sm"
+     },
+     {
+      "from": "sm",
+      "to": "out",
+      "label": "pick"
+     }
+    ]
+   },
+   "key_takeaways": [
+    "Transformers replace recurrence with attention so all positions are processed in parallel.",
+    "The same block is repeated N times; depth gives richer representations.",
+    "Everything starts with tokens → vectors and ends with a softmax over the vocabulary."
+   ],
+   "recall": {
+    "q": "Why can a Transformer train much faster than an RNN?",
+    "a": "It has no step-by-step recurrence: attention connects all positions in one matrix multiplication, so a GPU processes the whole sequence in parallel."
+   },
+   "next": "pg. 3: tokens & embeddings"
+  },
+  {
+   "number": 3,
+   "title": "tokens & embeddings",
+   "subtitle": "turning text into numbers",
+   "timestamp": "11:20",
+   "blocks": [
+    {
+     "type": "definition",
+     "term": "token",
+     "text": "A chunk of text — a word, part of a word or a single character — that the model treats as one unit. Vocabularies hold 30k–200k tokens."
+    },
+    {
+     "type": "definition",
+     "term": "embedding",
+     "text": "A learned vector (for example 768 numbers) that represents one token; similar meanings end up close together in this space."
+    },
+    {
+     "type": "paragraph",
+     "text": "Most LLMs use **subword tokenization** (BPE or WordPiece): frequent words stay whole, rare words split into pieces, so there are no truly unknown words."
+    },
+    {
+     "type": "table",
+     "headers": [
+      "text",
+      "tokens",
+      "ids (toy)"
+     ],
+     "rows": [
+      [
+       "unbelievable",
+       "un · believ · able",
+       "412 · 9034 · 87"
+      ],
+      [
+       "Transformers",
+       "Transform · ers",
+       "18811 · 388"
+      ],
+      [
+       "a & b",
+       "a · & · b",
+       "64 · 5 · 65"
+      ],
+      [
+       "café",
+       "caf · é",
+       "3190 · 2431"
+      ]
+     ]
+    },
+    {
+     "type": "example",
+     "title": "the embedding lookup",
+     "text": "The embedding layer is just a table of shape (vocab, d_model). Token id 412 selects row 412 — a vector the network can adjust during training."
+    },
+    {
+     "type": "code",
+     "language": "python",
+     "code": "ids = tokenizer.encode(\"unbelievable\")   # [412, 9034, 87]\nvecs = embedding_table[ids]               # shape (3, 768)\nprint(vecs.shape)\n"
+    }
+   ],
+   "diagram": {
+    "type": "mindmap",
+    "title": "from text to vectors",
+    "caption": "four ideas hang off one pipeline",
+    "nodes": [
+     {
+      "id": "root",
+      "label": "tokens & embeddings"
+     },
+     {
+      "id": "tok",
+      "label": "tokenization",
+      "parent": "root"
+     },
+     {
+      "id": "bpe",
+      "label": "BPE merges",
+      "parent": "tok"
+     },
+     {
+      "id": "sub",
+      "label": "sub-word pieces",
+      "parent": "tok"
+     },
+     {
+      "id": "emb",
+      "label": "embeddings",
+      "parent": "root"
+     },
+     {
+      "id": "lut",
+      "label": "lookup table",
+      "parent": "emb"
+     },
+     {
+      "id": "ctx",
+      "label": "context window",
+      "parent": "root"
+     },
+     {
+      "id": "len",
+      "label": "max length",
+      "parent": "ctx"
+     },
+     {
+      "id": "voc",
+      "label": "vocabulary",
+      "parent": "root",
+      "detail": "fixed list of pieces"
+     },
+     {
+      "id": "size",
+      "label": "~50k entries",
+      "parent": "voc"
+     }
+    ],
+    "edges": []
+   },
+   "key_takeaways": [
+    "Tokens are subword pieces, not always whole words.",
+    "An embedding is a learned row in a (vocab × d_model) table."
+   ],
+   "recall": {
+    "q": "What is an embedding?",
+    "a": "A learned vector for a token; the embedding layer is a lookup table whose rows are tuned during training so related tokens sit close together."
+   },
+   "next": "pg. 4: self-attention, step by step"
+  },
+  {
+   "number": 4,
+   "title": "self-attention, step by step",
+   "subtitle": "queries, keys, values",
+   "timestamp": "19:48",
+   "blocks": [
+    {
+     "type": "paragraph",
+     "text": "Each token vector x is projected three ways with learned matrices: a **query** (what am I looking for?), a **key** (what do I contain?) and a **value** (what do I hand over if chosen?)."
+    },
+    {
+     "type": "steps",
+     "items": [
+      "Compute Q = xW_Q, K = xW_K, V = xW_V for every token.",
+      "Score every pair: dot-product of a query with every key (Q·Kᵀ).",
+      "Scale by √d_k so the scores do not blow up the softmax.",
+      "Softmax each row to get attention weights that sum to 1.",
+      "Output = weights × V: a weighted average of the value vectors."
+     ]
+    },
+    {
+     "type": "formula",
+     "text": "Attention(Q, K, V) = softmax( Q·Kᵀ / √d_k ) · V"
+    },
+    {
+     "type": "callout",
+     "style": "tip",
+     "text": "Think of the weights as a heat-map: row i shows how much token i listens to each other token. In “the animal didn't cross because it was tired” the row for “it” is bright at “animal”."
+    },
+    {
+     "type": "callout",
+     "style": "warning",
+     "text": "Without the √d_k scaling the dot products grow with dimension; softmax saturates and gradients vanish — a classic exam question."
+    }
+   ],
+   "diagram": {
+    "type": "flow",
+    "title": "inside one attention head",
+    "caption": "Q, K and V come from the same input — hence “self”-attention",
+    "nodes": [
+     {
+      "id": "x",
+      "label": "x",
+      "detail": "token vectors"
+     },
+     {
+      "id": "q",
+      "label": "Q",
+      "detail": "queries"
+     },
+     {
+      "id": "k",
+      "label": "K",
+      "detail": "keys"
+     },
+     {
+      "id": "v",
+      "label": "V",
+      "detail": "values"
+     },
+     {
+      "id": "s",
+      "label": "Q·Kᵀ / √d",
+      "detail": "score matrix"
+     },
+     {
+      "id": "w",
+      "label": "softmax",
+      "detail": "weights"
+     },
+     {
+      "id": "o",
+      "label": "weights · V",
+      "detail": "output"
+     }
+    ],
+    "edges": [
+     {
+      "from": "x",
+      "to": "q",
+      "label": "W_Q"
+     },
+     {
+      "from": "x",
+      "to": "k",
+      "label": "W_K"
+     },
+     {
+      "from": "x",
+      "to": "v",
+      "label": "W_V"
+     },
+     {
+      "from": "q",
+      "to": "s"
+     },
+     {
+      "from": "k",
+      "to": "s"
+     },
+     {
+      "from": "s",
+      "to": "w"
+     },
+     {
+      "from": "w",
+      "to": "o"
+     },
+     {
+      "from": "v",
+      "to": "o"
+     }
+    ]
+   },
+   "key_takeaways": [
+    "Q·Kᵀ is a similarity score between every pair of tokens.",
+    "Softmax turns scores into weights; the output is a weighted sum of values.",
+    "Cost grows with n² for sequence length n."
+   ],
+   "recall": {
+    "q": "Walk me through self-attention in one breath.",
+    "a": "Project tokens to Q, K, V; score Q against all K, scale, softmax into weights; return the weights-weighted sum of V for each token."
+   },
+   "next": "pg. 5: many heads are better than one"
+  },
+  {
+   "number": 5,
+   "title": "multi-head attention",
+   "subtitle": "several views at once",
+   "timestamp": "31:02",
+   "blocks": [
+    {
+     "type": "paragraph",
+     "text": "One attention pattern cannot capture everything, so the model runs **h heads** in parallel, each with smaller Q/K/V (d_k = d_model / h). Their outputs are concatenated and mixed by one more linear layer."
+    },
+    {
+     "type": "bullets",
+     "items": [
+      "Different heads often specialise: syntax, coreference, nearby words, rare delimiters.",
+      "Cost stays about the same as one big head because each head is smaller.",
+      "Heads are not hand-designed — they emerge during training."
+     ]
+    },
+    {
+     "type": "table",
+     "headers": [
+      "model",
+      "d_model",
+      "heads",
+      "d_k"
+     ],
+     "rows": [
+      [
+       "original Transformer",
+       "512",
+       "8",
+       "64"
+      ],
+      [
+       "BERT-base",
+       "768",
+       "12",
+       "64"
+      ],
+      [
+       "GPT-3 175B",
+       "12288",
+       "96",
+       "128"
+      ]
+     ]
+    }
+   ],
+   "diagram": {
+    "type": "compare",
+    "title": "what each head might focus on",
+    "caption": "illustrative — real heads are less tidy",
+    "nodes": [
+     {
+      "id": "h1",
+      "label": "head 1: syntax",
+      "detail": "verb ↔ its subject"
+     },
+     {
+      "id": "h2",
+      "label": "head 2: coreference",
+      "detail": "“it” ↔ “animal”"
+     },
+     {
+      "id": "h3",
+      "label": "head 3: local",
+      "detail": "previous / next token"
+     }
+    ],
+    "edges": [
+     {
+      "from": "h1",
+      "to": "h2",
+      "label": "concat"
+     },
+     {
+      "from": "h2",
+      "to": "h3",
+      "label": "concat"
+     }
+    ]
+   },
+   "key_takeaways": [
+    "Heads attend to different relationships in parallel.",
+    "Outputs are concatenated, then projected with W_O."
+   ],
+   "recall": {
+    "q": "Why more than one head?",
+    "a": "Each head learns its own attention pattern in a smaller subspace, so the layer can track several relationships between the same tokens at once."
+   },
+   "next": "pg. 6: how the model knows word order"
+  },
+  {
+   "number": 6,
+   "title": "positional encoding",
+   "subtitle": "order is not free",
+   "timestamp": "40:15",
+   "blocks": [
+    {
+     "type": "paragraph",
+     "text": "Attention treats its input as a **set**: shuffle the tokens and the scores stay the same. To restore order we add a position vector to each embedding."
+    },
+    {
+     "type": "formula",
+     "text": "PE(pos, 2i) = sin(pos / 10000^(2i/d))   ·   PE(pos, 2i+1) = cos(pos / 10000^(2i/d))"
+    },
+    {
+     "type": "bullets",
+     "items": [
+      "Sinusoidal (original): fixed, can extrapolate to longer sequences in theory.",
+      "Learned absolute positions: a trainable table, simple, limited to the trained length.",
+      "Rotary (RoPE) and ALiBi: relative positions used by most modern LLMs."
+     ]
+    },
+    {
+     "type": "example",
+     "title": "why sines?",
+     "text": "Each dimension is a wave of a different wavelength, like the digits of a clock; the offset between two positions becomes a simple linear function of their encodings."
+    }
+   ],
+   "diagram": {
+    "type": "sequence",
+    "title": "how a token reaches attention",
+    "caption": "order is injected before any attention happens",
+    "nodes": [
+     {
+      "id": "tk",
+      "label": "tokenizer"
+     },
+     {
+      "id": "em",
+      "label": "embedding table"
+     },
+     {
+      "id": "pe",
+      "label": "positional step"
+     },
+     {
+      "id": "at",
+      "label": "attention layer"
+     }
+    ],
+    "edges": [
+     {
+      "from": "tk",
+      "to": "em",
+      "label": "token ids"
+     },
+     {
+      "from": "em",
+      "to": "pe",
+      "label": "word vectors (no order yet)"
+     },
+     {
+      "from": "pe",
+      "to": "pe",
+      "label": "add sin/cos of position i"
+     },
+     {
+      "from": "pe",
+      "to": "at",
+      "label": "order-aware vectors"
+     },
+     {
+      "from": "at",
+      "to": "at",
+      "label": "mix information across tokens"
+     },
+     {
+      "from": "at",
+      "to": "tk",
+      "label": "next-token scores (after the stack)"
+     }
+    ]
+   },
+   "key_takeaways": [
+    "Without position information “dog bites man” = “man bites dog”.",
+    "Modern models prefer relative schemes such as RoPE."
+   ],
+   "recall": {
+    "q": "Why does a Transformer need positional encodings?",
+    "a": "Attention is permutation-invariant; adding position vectors injects the order of the tokens."
+   },
+   "next": "pg. 7: the Transformer block"
+  },
+  {
+   "number": 7,
+   "title": "the Transformer block",
+   "subtitle": "attention, then think",
+   "timestamp": "46:30",
+   "blocks": [
+    {
+     "type": "paragraph",
+     "text": "A block is the repeating unit. Residual connections (“skip” paths) and layer normalisation keep very deep stacks trainable. After attention, a position-wise feed-forward network (FFN) transforms each token independently."
+    },
+    {
+     "type": "definition",
+     "term": "residual connection",
+     "text": "Adds the block's input back to its output: y = x + F(x). Gradients can flow straight through the addition."
+    },
+    {
+     "type": "definition",
+     "term": "layer norm",
+     "text": "Normalises each token vector to zero mean and unit variance, then rescales with learned parameters."
+    },
+    {
+     "type": "callout",
+     "style": "warning",
+     "text": "Original paper: post-norm (normalise after the add). Most modern models use pre-norm, which is more stable at scale."
+    },
+    {
+     "type": "callout",
+     "style": "note",
+     "text": "The FFN is usually 4× wider than d_model and holds most of the parameters."
+    }
+   ],
+   "diagram": {
+    "type": "stack",
+    "title": "one encoder block, top to bottom",
+    "caption": "this exact block is repeated N times",
+    "nodes": [
+     {
+      "id": "a",
+      "label": "Add & Norm",
+      "detail": "residual + layer norm on the FFN output"
+     },
+     {
+      "id": "b",
+      "label": "Feed-forward (FFN)",
+      "detail": "two linear layers with a non-linearity, per token"
+     },
+     {
+      "id": "c",
+      "label": "Add & Norm",
+      "detail": "residual + layer norm on the attention output"
+     },
+     {
+      "id": "d",
+      "label": "Multi-head self-attention",
+      "detail": "every token looks at every token"
+     },
+     {
+      "id": "e",
+      "label": "Input embeddings + positions",
+      "detail": "x"
+     }
+    ]
+   },
+   "key_takeaways": [
+    "Residual + norm make deep stacks stable.",
+    "FFN does per-token processing; attention does cross-token mixing."
+   ],
+   "recall": {
+    "q": "What are the two sub-layers of a block?",
+    "a": "Multi-head self-attention (mix across tokens) and a position-wise feed-forward network (process each token), each wrapped in residual + layer norm."
+   },
+   "next": "pg. 8: how it is trained"
+  },
+  {
+   "number": 8,
+   "title": "training & the loss loop",
+   "subtitle": "predict, compare, nudge",
+   "timestamp": "52:10",
+   "blocks": [
+    {
+     "type": "paragraph",
+     "text": "Language models are trained with a very simple objective: **predict the next token**. The text is its own label — no human annotation is required — which is why this scales to trillions of tokens. The model sees a window of tokens, outputs a probability distribution over the vocabulary and is scored with cross-entropy against the token that actually came next."
+    },
+    {
+     "type": "paragraph",
+     "text": "A causal mask hides future positions inside attention so token i can only attend to tokens ≤ i. During training all positions are predicted at once (teacher forcing), which is exactly where the Transformer's parallelism pays off. At inference the model must generate one token at a time, feeding each prediction back in, and a key-value cache avoids recomputing old keys and values."
+    },
+    {
+     "type": "bullets",
+     "items": [
+      "Optimiser: Adam / AdamW with a learning-rate warm-up followed by decay.",
+      "Regularisation: dropout, weight decay, label smoothing in the original paper.",
+      "Mixed precision (fp16 / bf16) halves memory and speeds up matrix multiplications.",
+      "Gradient clipping (norm 1.0) protects against loss spikes.",
+      "Batches are huge — often millions of tokens — spread across many GPUs with data / tensor / pipeline parallelism.",
+      "Learning-rate schedule: linear warm-up for the first ~1–2% of steps, then cosine decay.",
+      "Checkpointing: save weights + optimiser state often; long runs will crash eventually.",
+      "Evaluation: track validation loss and perplexity; plot loss curves per token position.",
+      "Data matters at least as much as architecture: deduplicate, filter, balance domains.",
+      "Context length is a budget: attention memory grows with n², so long contexts need tricks such as FlashAttention."
+     ]
+    },
+    {
+     "type": "code",
+     "language": "python",
+     "code": "import torch\nimport torch.nn as nn\n\nclass TinyAttention(nn.Module):\n    def __init__(self, d_model=64, n_heads=4):\n        super().__init__()\n        self.h = n_heads\n        self.dk = d_model // n_heads\n        self.qkv = nn.Linear(d_model, 3 * d_model)\n        self.out = nn.Linear(d_model, d_model)\n\n    def forward(self, x, mask=None):\n        B, T, D = x.shape\n        q, k, v = self.qkv(x).chunk(3, dim=-1)\n        # split into heads: (B, h, T, dk)\n        q, k, v = [t.view(B, T, self.h, self.dk).transpose(1, 2) for t in (q, k, v)]\n        scores = q @ k.transpose(-2, -1) / self.dk ** 0.5   # QK^T / sqrt(dk)\n        if mask is not None:\n            scores = scores.masked_fill(mask == 0, float(\"-inf\"))\n        attn = scores.softmax(dim=-1)                       # rows sum to 1\n        y = (attn @ v).transpose(1, 2).reshape(B, T, D)\n        return self.out(y)\n\n# one training step, in 6 lines\nlogits = model(tokens[:, :-1])                  # predict the next token\nloss = nn.functional.cross_entropy(logits.flatten(0, 1), tokens[:, 1:].flatten())\nloss.backward()                                 # gradients through every layer\ntorch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)\noptimizer.step(); scheduler.step()              # warm-up, then decay\noptimizer.zero_grad(set_to_none=True)\n"
+    },
+    {
+     "type": "steps",
+     "items": [
+      "Tokenise a batch and shift it by one position to make inputs and targets.",
+      "Run the forward pass with the causal mask.",
+      "Compute cross-entropy between logits and the shifted targets.",
+      "Back-propagate; clip the gradient norm.",
+      "Optimizer step, scheduler step, zero the gradients — then repeat for the next batch."
+     ]
+    },
+    {
+     "type": "table",
+     "headers": [
+      "stage",
+      "what changes",
+      "typical scale"
+     ],
+     "rows": [
+      [
+       "pre-training",
+       "all weights, next-token loss",
+       "10²–10⁴ GPUs, weeks"
+      ],
+      [
+       "supervised fine-tuning",
+       "all or LoRA weights, curated Q&A pairs",
+       "1–100k examples"
+      ],
+      [
+       "preference tuning (RLHF / DPO)",
+       "policy toward human-preferred answers",
+       "10k–1M comparisons"
+      ],
+      [
+       "evaluation",
+       "nothing — read-only",
+       "benchmarks, human review"
+      ],
+      [
+       "distillation",
+       "small student mimics a big teacher",
+       "same data, fewer parameters"
+      ],
+      [
+       "quantisation",
+       "weights stored in 8 / 4 bits",
+       "inference-time only"
+      ],
+      [
+       "serving",
+       "KV cache, batching, speculative decoding",
+       "latency & cost focus"
+      ]
+     ]
+    },
+    {
+     "type": "example",
+     "title": "perplexity in plain words",
+     "text": "If a model has perplexity 20 it is, on average, as unsure as if it were choosing uniformly among 20 equally likely next tokens. Lower is better."
+    },
+    {
+     "type": "callout",
+     "style": "tip",
+     "text": "When a loss curve suddenly spikes, check the data shard, the learning rate and the gradient norm — in that order."
+    },
+    {
+     "type": "paragraph",
+     "text": "Fine-tuning adapts a pre-trained model to a task using far less data. Parameter-efficient methods such as LoRA freeze the original weights and train small low-rank update matrices, which cuts memory dramatically and makes it possible to keep many task adapters side by side."
+    }
+   ],
+   "diagram": {
+    "type": "cycle",
+    "title": "the training loop",
+    "caption": "repeated for millions of steps",
+    "nodes": [
+     {
+      "id": "a",
+      "label": "sample batch",
+      "detail": "tokens from the corpus"
+     },
+     {
+      "id": "b",
+      "label": "forward pass",
+      "detail": "with causal mask"
+     },
+     {
+      "id": "c",
+      "label": "loss",
+      "detail": "cross-entropy"
+     },
+     {
+      "id": "d",
+      "label": "backward pass",
+      "detail": "gradients"
+     },
+     {
+      "id": "e",
+      "label": "update weights",
+      "detail": "AdamW step"
+     }
+    ],
+    "edges": [
+     {
+      "from": "a",
+      "to": "b"
+     },
+     {
+      "from": "b",
+      "to": "c"
+     },
+     {
+      "from": "c",
+      "to": "d"
+     },
+     {
+      "from": "d",
+      "to": "e"
+     },
+     {
+      "from": "e",
+      "to": "a",
+      "label": "next batch"
+     }
+    ]
+   },
+   "key_takeaways": [
+    "The training signal is simply “predict the next token”.",
+    "Causal masking + teacher forcing = parallel training, sequential generation.",
+    "Optimiser tricks (warm-up, clipping, mixed precision) make large runs stable.",
+    "Fine-tuning and LoRA reuse pre-trained weights cheaply."
+   ],
+   "recall": {
+    "q": "Why is generation slower than training per token?",
+    "a": "Training predicts all positions in one parallel pass; generation must emit tokens one by one, each depending on the previous, even with a KV cache."
+   },
+   "next": "pg. 9: where this came from"
+  },
+  {
+   "number": 9,
+   "title": "a short history",
+   "subtitle": "2014 → 2022",
+   "timestamp": "1:01:25",
+   "blocks": [
+    {
+     "type": "paragraph",
+     "text": "The ideas arrived in steps: attention first helped RNN translators, then replaced them, then became the backbone of general-purpose language models."
+    },
+    {
+     "type": "bullets",
+     "items": [
+      "2014: Bahdanau attention lets a translator look back at the source sentence.",
+      "2017: the Transformer — attention only, parallel training.",
+      "2018: BERT (encoder) and GPT (decoder) show pre-train-then-fine-tune works.",
+      "2020: GPT-3 shows in-context learning at 175B parameters.",
+      "2022: instruction tuning + RLHF turn LLMs into assistants."
+     ]
+    }
+   ],
+   "diagram": {
+    "type": "timeline",
+    "title": "milestones",
+    "caption": "each step kept the attention core and changed scale or training",
+    "nodes": [
+     {
+      "id": "a",
+      "label": "2014",
+      "detail": "attention for RNN translation"
+     },
+     {
+      "id": "b",
+      "label": "2017",
+      "detail": "Transformer"
+     },
+     {
+      "id": "c",
+      "label": "2018",
+      "detail": "BERT & GPT"
+     },
+     {
+      "id": "d",
+      "label": "2020",
+      "detail": "GPT-3, in-context learning"
+     },
+     {
+      "id": "e",
+      "label": "2022",
+      "detail": "RLHF assistants"
+     }
+    ],
+    "edges": []
+   },
+   "key_takeaways": [
+    "Scale + data + the same attention core drove the progress.",
+    "Instruction tuning made models usable by non-experts."
+   ],
+   "recall": {
+    "q": "What changed between GPT-2 and GPT-3?",
+    "a": "Mainly scale: far more parameters and data, which unlocked in-context (few-shot) learning without any weight updates."
+   },
+   "next": "pg. 10: families & scaling"
+  },
+  {
+   "number": 10,
+   "title": "model families & scaling",
+   "subtitle": "encoder, decoder or both",
+   "timestamp": "1:08:00",
+   "blocks": [
+    {
+     "type": "paragraph",
+     "text": "The original Transformer had an encoder and a decoder. Later models keep one half depending on the job."
+    },
+    {
+     "type": "bullets",
+     "items": [
+      "Encoder-only (BERT): bidirectional, great for classification and embeddings.",
+      "Decoder-only (GPT, LLaMA): causal, the standard for text generation.",
+      "Encoder-decoder (T5): reads input fully, then generates output — translation, summarisation."
+     ]
+    },
+    {
+     "type": "table",
+     "headers": [
+      "family",
+      "attention",
+      "best for"
+     ],
+     "rows": [
+      [
+       "encoder-only",
+       "bidirectional",
+       "classify, search, embed"
+      ],
+      [
+       "decoder-only",
+       "causal",
+       "chat, code, writing"
+      ],
+      [
+       "encoder-decoder",
+       "both + cross-attention",
+       "translate, summarise"
+      ]
+     ]
+    },
+    {
+     "type": "callout",
+     "style": "note",
+     "text": "Scaling laws: loss falls smoothly as a power law in parameters, data and compute — which is why bigger runs were funded."
+    }
+   ],
+   "diagram": {
+    "type": "tree",
+    "title": "the family tree",
+    "caption": "all share the same attention block",
+    "nodes": [
+     {
+      "id": "t",
+      "label": "Transformer",
+      "detail": "2017"
+     },
+     {
+      "id": "e",
+      "label": "encoder-only",
+      "detail": "BERT, RoBERTa"
+     },
+     {
+      "id": "d",
+      "label": "decoder-only",
+      "detail": "GPT, LLaMA"
+     },
+     {
+      "id": "x",
+      "label": "encoder-decoder",
+      "detail": "T5, BART"
+     },
+     {
+      "id": "e1",
+      "label": "classification"
+     },
+     {
+      "id": "d1",
+      "label": "chat & code"
+     }
+    ],
+    "edges": [
+     {
+      "from": "t",
+      "to": "e"
+     },
+     {
+      "from": "t",
+      "to": "d"
+     },
+     {
+      "from": "t",
+      "to": "x"
+     },
+     {
+      "from": "e",
+      "to": "e1"
+     },
+     {
+      "from": "d",
+      "to": "d1"
+     }
+    ]
+   },
+   "key_takeaways": [
+    "Pick the half of the Transformer that matches the task.",
+    "Scaling laws predict gains from more parameters, data and compute."
+   ],
+   "recall": {
+    "q": "Why are most chat models decoder-only?",
+    "a": "Next-token prediction with a causal mask is simple, scales well and handles any text-in/text-out task in a single architecture."
+   },
+   "next": "pg. 11: glossary and recap"
+  }
+ ],
+ "glossary": [
+  {
+   "term": "token",
+   "definition": "A unit of text (word piece) the model reads."
+  },
+  {
+   "term": "embedding",
+   "definition": "A learned vector representing a token."
+  },
+  {
+   "term": "query / key / value",
+   "definition": "The three projections of a token used by attention: what it seeks, what it offers, what it passes on."
+  },
+  {
+   "term": "softmax",
+   "definition": "Turns arbitrary scores into positive weights that sum to 1."
+  },
+  {
+   "term": "multi-head attention",
+   "definition": "Several attention heads in parallel, each in a smaller subspace."
+  },
+  {
+   "term": "positional encoding",
+   "definition": "Extra vector that tells the model where a token sits in the sequence."
+  },
+  {
+   "term": "residual connection",
+   "definition": "Adds a layer's input to its output: y = x + F(x)."
+  },
+  {
+   "term": "layer norm",
+   "definition": "Normalises each token vector across its features."
+  },
+  {
+   "term": "causal mask",
+   "definition": "Blocks attention to future tokens so generation stays left-to-right."
+  },
+  {
+   "term": "teacher forcing",
+   "definition": "Feeding the true previous tokens during training so all positions are learned in parallel."
+  },
+  {
+   "term": "KV cache",
+   "definition": "Stored keys and values of earlier tokens, reused during generation."
+  },
+  {
+   "term": "perplexity",
+   "definition": "exp(cross-entropy): the effective number of equally likely choices."
+  },
+  {
+   "term": "LoRA",
+   "definition": "Fine-tuning with small trainable low-rank updates on frozen weights."
+  },
+  {
+   "term": "RLHF",
+   "definition": "Reinforcement learning from human feedback to align outputs."
+  },
+  {
+   "term": "scaling law",
+   "definition": "Power-law relation between loss and model size, data, compute."
+  },
+  {
+   "term": "BPE",
+   "definition": "Byte-pair encoding: merges frequent character pairs to build a subword vocabulary."
+  }
+ ],
+ "recap": {
+  "title": "the whole picture, recapped",
+  "points": [
+   "Text → tokens → embeddings (+ positions).",
+   "Each block: multi-head self-attention mixes tokens, the FFN refines each token; residual + norm keep it trainable.",
+   "Attention = softmax(Q·Kᵀ/√d)·V, run in several heads.",
+   "Training predicts the next token; a causal mask makes it parallel.",
+   "Variants: encoder-only, decoder-only, encoder-decoder; scale drives quality."
+  ],
+  "diagram": {
+   "type": "flow",
+   "title": "",
+   "caption": "from text to the next word",
+   "nodes": [
+    {
+     "id": "a",
+     "label": "tokens"
+    },
+    {
+     "id": "b",
+     "label": "embed + position"
+    },
+    {
+     "id": "c",
+     "label": "N × (attention + FFN)"
+    },
+    {
+     "id": "d",
+     "label": "softmax"
+    },
+    {
+     "id": "e",
+     "label": "next token"
+    }
+   ],
+   "edges": [
+    {
+     "from": "a",
+     "to": "b"
+    },
+    {
+     "from": "b",
+     "to": "c"
+    },
+    {
+     "from": "c",
+     "to": "d"
+    },
+    {
+     "from": "d",
+     "to": "e"
+    }
+   ]
+  }
+ }
+}

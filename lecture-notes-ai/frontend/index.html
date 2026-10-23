@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lecture Notes AI</title>
+  <meta name="description" content="Turn a YouTube lecture into a hand-drawn field-notebook PDF of knowledge-only study notes.">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='6' y='3' width='21' height='26' rx='3' fill='%23f6f1e3' stroke='%232b2a33' stroke-width='2'/%3E%3Cpath d='M11 10h12M11 15h12M11 20h8' stroke='%232b2a33' stroke-width='2' stroke-linecap='round'/%3E%3Crect x='3' y='7' width='6' height='3' rx='1.5' fill='%232b2a33'/%3E%3Crect x='3' y='14' width='6' height='3' rx='1.5' fill='%232b2a33'/%3E%3Crect x='3' y='21' width='6' height='3' rx='1.5' fill='%232b2a33'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <svg class="logo" viewBox="0 0 48 48" width="44" height="44" aria-hidden="true" focusable="false">
+        <rect x="9" y="4" width="32" height="40" rx="4" fill="#fffaf0" stroke="currentColor" stroke-width="2.5"/>
+        <path d="M17 15h17M17 23h17M17 31h11" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+        <rect x="4" y="10" width="9" height="4" rx="2" fill="currentColor"/>
+        <rect x="4" y="22" width="9" height="4" rx="2" fill="currentColor"/>
+        <rect x="4" y="34" width="9" height="4" rx="2" fill="currentColor"/>
+      </svg>
+      <div>
+        <h1 class="brand">Lecture Notes AI</h1>
+        <p class="tagline">paste a lecture, get a field notebook &mdash; knowledge only, no filler</p>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+
+    <!-- ===== embedded video (appears once a valid link is entered) ===== -->
+    <section id="video-card" class="paper video-card" aria-label="Lecture video" hidden>
+      <div class="video-frame" id="video-frame"></div>
+    </section>
+
+    <!-- ===== form ===== -->
+    <section id="form-panel" class="paper" aria-labelledby="form-title">
+      <h2 id="form-title" class="hand">1. what are we studying?</h2>
+
+      <form id="job-form" novalidate autocomplete="off">
+        <div class="field">
+          <label for="url">YouTube lecture link</label>
+          <input id="url" name="url" type="url" inputmode="url" required
+                 placeholder="https://www.youtube.com/watch?v=..." spellcheck="false" autocomplete="off">
+          <p class="field-error" id="url-error" role="alert" hidden></p>
+        </div>
+
+        <div class="field">
+          <label for="provider">AI provider</label>
+          <select id="provider" name="provider" required aria-describedby="provider-hint">
+            <option value="">Loading providers...</option>
+          </select>
+          <p class="hint" id="provider-hint"></p>
+        </div>
+
+        <div class="field">
+          <label for="api-key">API key</label>
+          <div class="key-row">
+            <input id="api-key" name="api_key" type="password" autocomplete="off" spellcheck="false"
+                   autocapitalize="off" placeholder="paste your key here" aria-describedby="key-note">
+            <button type="button" id="toggle-key" class="btn small ghost" aria-pressed="false">Show</button>
+          </div>
+          <p class="key-note" id="key-note" aria-live="polite"></p>
+          <label class="check">
+            <input type="checkbox" id="remember">
+            <span>Remember this key on this device <small>(stored unencrypted in this browser only)</small></span>
+          </label>
+          <p class="hint">Your key is sent only to this app on your own computer, used for this one job, and never saved on the server.</p>
+        </div>
+
+        <details class="advanced">
+          <summary>Advanced options</summary>
+          <div class="field">
+            <label for="model">Model override <small>(optional)</small></label>
+            <input id="model" name="model" type="text" spellcheck="false" autocomplete="off" placeholder="leave empty for the default">
+            <p class="hint" id="model-hint"></p>
+          </div>
+          <div class="field" id="groq-field">
+            <label for="groq-key">Groq key for speech-to-text <small>(optional)</small></label>
+            <input id="groq-key" name="groq_key" type="password" autocomplete="off" spellcheck="false" autocapitalize="off">
+            <p class="hint">Only used when a video has <em>no captions</em>: the audio is then transcribed with Groq Whisper. Free key at console.groq.com/keys.</p>
+          </div>
+        </details>
+
+        <div class="actions">
+          <button type="submit" id="generate" class="btn primary">Generate notes</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ===== progress ===== -->
+    <section id="progress-panel" class="paper" aria-labelledby="progress-title" hidden>
+      <h2 id="progress-title" class="hand">2. working on it...</h2>
+
+      <ol class="stepper" id="stepper">
+        <li data-step="transcript"><span class="dot" aria-hidden="true">1</span><span class="label">Fetching transcript</span></li>
+        <li data-step="notes"><span class="dot" aria-hidden="true">2</span><span class="label">Writing notes</span></li>
+        <li data-step="pdf"><span class="dot" aria-hidden="true">3</span><span class="label">Drawing notebook PDF</span></li>
+      </ol>
+
+      <div class="bar" role="progressbar" aria-labelledby="progress-title" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar">
+        <div class="bar-fill" id="bar-fill"></div>
+      </div>
+      <p class="bar-text"><span id="pct">0%</span> &middot; <span id="progress-msg" role="status" aria-live="polite">Starting...</span></p>
+      <p class="hint">Long lectures can take a few minutes. You can leave this tab open and come back.</p>
+    </section>
+
+    <!-- ===== error ===== -->
+    <section id="error-panel" class="paper error" role="alert" aria-labelledby="error-title" hidden>
+      <h2 id="error-title" class="hand">oops &mdash; that didn't work</h2>
+      <p id="error-msg" class="error-msg"></p>
+      <div class="actions">
+        <button type="button" id="retry" class="btn primary">Retry</button>
+        <button type="button" id="edit" class="btn ghost">Change settings</button>
+      </div>
+    </section>
+
+    <!-- ===== result ===== -->
+    <section id="result-panel" class="paper" aria-labelledby="result-title" hidden>
+      <h2 id="result-title" class="hand">3. your notebook is ready</h2>
+      <div class="video-meta">
+        <p class="video-title" id="video-title"></p>
+        <p class="video-sub" id="video-sub"></p>
+      </div>
+      <p class="sticky" id="warning" role="status" hidden></p>
+      <div class="actions">
+        <a id="dl-pdf" class="btn primary" href="#" download>Download PDF</a>
+        <button type="button" id="again" class="btn ghost">Notes for another video</button>
+      </div>
+      <div class="preview-wrap" id="preview-wrap">
+        <iframe id="preview" title="Notes preview" sandbox="allow-scripts" referrerpolicy="no-referrer" loading="lazy"></iframe>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="wrap site-footer">
+    <p>Runs locally on your computer. Transcripts are sent to the AI provider you choose; nothing else leaves your machine.</p>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,158 @@
+/* Lecture Notes AI - field-notebook stylesheet (screen preview + A4 print). */
+:root{
+  --ink:#2b2622; --ink-soft:#5a5148; --paper:#f6f1e3; --paper-edge:#ece4cf; --card:#fffdf6;
+  --yellow:#fbeb9a; --yellow-edge:#b8960f; --red:#b03a2e; --green:#2e7d4f; --blue:#2f5f8f;
+  --pink:#f9dcd6; --mint:#dcefdc; --sky:#e3edf8; --dot:rgba(140,124,88,.26);
+  --f-title:'NB Kalam','Segoe Print','Comic Sans MS',cursive;
+  --f-body:'NB Patrick','NB Kalam','Segoe UI','Nirmala UI',sans-serif;
+  --f-note:'NB Caveat','NB Kalam','Segoe Print',cursive;
+  --f-mono:'NB Mono','Consolas','Courier New',monospace;
+  --wob:255px 18px 225px 18px / 18px 225px 18px 255px;
+  --wob2:18px 235px 16px 245px / 245px 16px 235px 18px;
+}
+@page{ size:A4; margin:0 }
+*{ box-sizing:border-box }
+html,body{ margin:0; padding:0 }
+body{ background:#cfc8b5; font-family:var(--f-body); color:var(--ink); -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  text-rendering:geometricPrecision; font-kerning:normal; }
+#source{ display:none }
+#pages{ transform-origin:top left }
+.page{ position:relative; width:794px; height:1122px; margin:18px auto; overflow:hidden; background-color:var(--paper);
+  background-image:
+    radial-gradient(circle at 50% 50%, var(--dot) 1.1px, transparent 1.7px),
+    linear-gradient(90deg, rgba(120,100,60,.13) 0, rgba(120,100,60,.05) 56px, rgba(0,0,0,0) 62px),
+    radial-gradient(ellipse at 55% 45%, rgba(255,255,255,.35) 0, rgba(255,255,255,0) 65%);
+  background-size:46px 46px, 100% 100%, 100% 100%; background-position:23px 26px, 0 0, 0 0;
+  box-shadow:0 2px 14px rgba(40,30,10,.35); break-after:page; page-break-after:always; }
+.page:last-child{ break-after:auto; page-break-after:auto }
+.page .rings{ position:absolute; left:0; top:0; width:56px; height:1122px; pointer-events:none }
+.page .content{ position:absolute; left:58px; right:50px; top:34px; bottom:76px; overflow:hidden; padding-bottom:2px }
+.page .foot-l{ position:absolute; left:50px; bottom:22px; font:italic 300 14px/1 'NB Kalam Light','NB Kalam',cursive; color:var(--ink-soft);
+  max-width:520px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.page .foot-r{ position:absolute; right:44px; bottom:20px; font:400 17px/1 'NB Kalam',cursive; color:var(--ink-soft) }
+.page .nextline{ position:absolute; right:50px; bottom:48px; font:italic 300 16px/1.2 'NB Kalam Light','NB Kalam',cursive; color:var(--blue); max-width:640px; text-align:right }
+.page .nextline b{ font-weight:400 }
+@media print{
+  body{ background:none }
+  .page{ margin:0; box-shadow:none }
+  #pages{ zoom:1 !important; transform:none !important }
+}
+
+/* ---------- section header ---------- */
+.item{ position:relative }
+.sec-head{ display:flex; align-items:baseline; flex-wrap:wrap; column-gap:14px; padding:6px 0 0; margin:0 0 14px; position:relative }
+.sec-head h2{ margin:0; font:700 40px/1.15 'NB Kalam',cursive; letter-spacing:.2px; color:var(--ink) }
+.sec-head h2.m{ font-size:34px } .sec-head h2.s{ font-size:29px }
+.sec-head .sub{ font:italic 300 17px/1.2 'NB Kalam Light','NB Kalam',cursive; color:var(--ink-soft) }
+.sec-head .ts{ margin-left:auto; font:400 18px/1 'NB Caveat',cursive; color:#8d8372 }
+.sec-head svg.ul{ display:block; width:100%; height:12px; margin-top:-2px; flex-basis:100% }
+.cont-head{ display:flex; align-items:baseline; gap:12px; margin:2px 0 12px; font:700 24px/1.2 'NB Kalam',cursive; flex-wrap:wrap }
+.cont-head em{ font:italic 300 16px 'NB Kalam Light','NB Kalam',cursive; color:var(--ink-soft) }
+.cont-head svg.ul{ display:block; width:100%; height:10px; margin-top:-4px }
+
+/* ---------- blocks ---------- */
+.blk{ margin:0 0 13px }
+.blk p, .blk .sb.para{ margin:0; font-size:16.5px; line-height:1.5 }
+.blk b{ font-weight:400; font-family:'NB Kalam',cursive; font-weight:700; font-size:.94em }
+code{ font:400 12.6px/1.2 var(--f-mono); background:rgba(70,60,40,.08); border:1px solid rgba(70,60,40,.16); border-radius:4px; padding:0 4px; white-space:pre-wrap; overflow-wrap:anywhere }
+.blk ul, .blk ol{ margin:0; padding:0; list-style:none }
+.b-bullets li{ position:relative; padding-left:24px; margin:0 0 6px; font-size:16.5px; line-height:1.45 }
+.b-bullets li::before{ content:""; position:absolute; left:5px; top:.62em; width:8px; height:8px; border:2px solid var(--ink); border-radius:55% 45% 60% 40%/45% 60% 40% 55%; transform:rotate(12deg) }
+.b-steps li{ position:relative; padding-left:38px; margin:0 0 8px; font-size:16.5px; line-height:1.45; min-height:26px }
+.b-steps li .num{ position:absolute; left:2px; top:-1px; width:27px; height:27px; display:flex; align-items:center; justify-content:center;
+  font:700 15px/1 'NB Kalam',cursive; border:2px solid var(--ink); border-radius:48% 52% 45% 55%/55% 45% 55% 45%; background:var(--card); transform:rotate(-4deg); padding-top:2px }
+.b-def .box{ background:var(--card); border:2px solid var(--ink); border-radius:var(--wob); padding:9px 15px 10px 15px; box-shadow:3px 3px 0 rgba(43,38,34,.2);
+  font-size:16.5px; line-height:1.45 }
+.b-def .term{ font:700 18px 'NB Kalam',cursive; margin-right:4px }
+.b-def .tag{ font:400 16px 'NB Caveat',cursive; color:var(--blue); margin-right:6px }
+.b-ex .box{ background:var(--sky); border:2px dashed var(--blue); border-radius:var(--wob2); padding:8px 15px 10px; font-size:16.2px; line-height:1.45 }
+.b-ex .ex-t{ font:700 16.5px 'NB Kalam',cursive; color:var(--blue); display:block; margin-bottom:2px }
+.b-call{ padding:6px 4px 6px 0 }
+.b-call .box{ position:relative; max-width:94%; padding:12px 18px 12px; font:400 17px/1.4 'NB Kalam',cursive; box-shadow:2px 3px 0 rgba(60,45,0,.28), 0 6px 8px -4px rgba(0,0,0,.25);
+  border-radius:3px 3px 3px 22px/3px 3px 3px 8px; transform:rotate(-.7deg) }
+.b-call.t2 .box{ transform:rotate(.6deg); margin-left:auto }
+.b-call .box::before{ content:""; position:absolute; top:-9px; left:50%; width:62px; height:17px; margin-left:-31px; background:rgba(255,255,255,.55); border:1px solid rgba(0,0,0,.08); transform:rotate(-2deg) }
+.b-call .lbl{ display:block; font:400 17px/1 'NB Caveat',cursive; margin-bottom:2px; letter-spacing:.3px }
+.b-call.note .box{ background:var(--yellow) } .b-call.note .lbl{ color:var(--yellow-edge) }
+.b-call.warning .box{ background:var(--pink) } .b-call.warning .lbl{ color:var(--red) }
+.b-call.tip .box{ background:var(--mint) } .b-call.tip .lbl{ color:var(--green) }
+.b-call .box span.tx{ font-size:16.2px; font-family:'NB Patrick','NB Kalam',sans-serif; line-height:1.4 }
+.b-code .box{ background:var(--card); border:2px solid var(--ink); border-left:7px solid var(--green); border-radius:4px 10px 4px 10px; padding:8px 12px 9px; position:relative; box-shadow:2px 2px 0 rgba(43,38,34,.15) }
+.b-code .lang{ position:absolute; right:10px; top:-11px; background:var(--paper); padding:0 8px; font:400 16px/1 'NB Caveat',cursive; color:var(--green) }
+.b-code .sb{ font:400 12.4px/1.42 var(--f-mono); color:#1f1b18 }
+.b-code .ln{ white-space:pre-wrap; overflow-wrap:anywhere; padding-left:2.2em; text-indent:-2.2em; min-height:1.42em }
+.b-code .ln .nr{ display:inline-block; width:1.6em; margin-right:.6em; text-align:right; text-indent:0; color:#a79c88; user-select:none }
+.b-table table{ width:100%; border-collapse:collapse; background:var(--card); border:2px solid var(--ink); font-size:15px; line-height:1.3 }
+.b-table th{ font:700 15.5px 'NB Kalam',cursive; text-align:left; padding:6px 10px 3px; border-bottom:2.5px solid var(--ink); background:rgba(251,235,154,.45) }
+.b-table td{ padding:5px 10px 5px; border-bottom:1.5px dashed rgba(43,38,34,.4); vertical-align:top; overflow-wrap:anywhere }
+.b-table th+th, .b-table td+td{ border-left:1.5px solid rgba(43,38,34,.33) }
+.b-table tr:last-child td{ border-bottom:none }
+.b-table tbody tr:nth-child(even) td{ background:rgba(120,100,60,.045) }
+.b-table.cut-before table, .b-table.cut-after table{ }
+.b-formula .box{ text-align:center; font:400 21px/1.4 'NB Patrick','NB Kalam',serif; background:var(--card); border:2px solid var(--ink); border-radius:var(--wob); padding:10px 16px 9px; position:relative; overflow-wrap:anywhere }
+.b-formula .box::after{ content:""; display:block; width:46%; margin:3px auto 0; border-bottom:2px solid var(--red); border-radius:50%; transform:rotate(-.8deg) }
+.cut-after .box{ border-bottom-style:dashed }
+.cut-before .box{ border-top-style:dashed }
+.cut-before.b-code .lang{ display:none }
+.cut-after::after{ content:"… continues on next page"; display:block; text-align:right; font:300 italic 14px 'NB Kalam Light','NB Kalam',cursive; color:var(--ink-soft); margin-top:2px }
+
+/* ---------- diagrams ---------- */
+.dgm{ margin:4px 0 14px; text-align:center }
+.dgm .dt{ font:700 18px/1.2 'NB Kalam',cursive; text-align:left; margin:0 0 2px 2px }
+.dgm svg.d{ display:block; width:100%; height:auto; max-height:470px; margin:0 auto; overflow:visible }
+/* diagrams carry two stroke layers: .py (plain svg, works without JS) and Rough.js output (.rough); the latter replaces the former */
+svg.d.rough-on .py{ display:none }
+.cv-dgm svg.d{ overflow:visible }
+.dgm .cap{ font:400 20px/1.15 'NB Caveat',cursive; color:var(--green); margin-top:2px }
+svg text{ white-space:pre }
+svg .kb{ font-family:'NB Kalam',cursive; font-weight:700 }
+svg .kr{ font-family:'NB Kalam',cursive }
+svg .ph{ font-family:'NB Patrick','NB Kalam',sans-serif }
+svg .cv{ font-family:'NB Caveat',cursive }
+
+/* ---------- takeaways / recall ---------- */
+.take{ margin:6px 0 14px; padding:2px 0 0 14px; border-left:3px solid rgba(46,125,79,.55); border-radius:0 0 0 14px }
+.take .tt{ font:700 15px/1 'NB Kalam',cursive; color:var(--green); letter-spacing:.4px; margin-bottom:3px }
+.take ul{ margin:0; padding:0; list-style:none }
+.take li{ font:400 21px/1.2 'NB Caveat',cursive; color:var(--green); padding-left:22px; position:relative; margin:0 0 2px }
+.take li::before{ content:"\2192"; position:absolute; left:0; top:0; font-family:'NB Kalam',cursive }
+.recall{ margin:8px 0 14px }
+.recall .box{ background:var(--yellow); border:2px solid #9c7d0b; border-radius:5px 3px 6px 3px/3px 6px 3px 5px; padding:9px 16px 12px; box-shadow:0 3px 0 -1px #b8960f, 2px 3px 0 rgba(60,45,0,.3), 0 6px 9px -4px rgba(0,0,0,.28) }
+.recall .rt{ font:italic 400 15px/1.1 'NB Kalam',cursive; color:var(--red); margin-bottom:2px }
+.recall .q{ font:700 17.5px/1.3 'NB Kalam',cursive; margin-bottom:3px }
+.recall .a{ font:400 16px/1.42 'NB Patrick','NB Kalam',sans-serif }
+.recall .a b.al{ font-family:'NB Patrick',sans-serif; font-size:1em }
+
+/* ---------- glossary & recap ---------- */
+.gl-row{ display:grid; grid-template-columns:200px 1fr; column-gap:16px; padding:6px 4px 6px; border-bottom:1.6px dashed rgba(43,38,34,.4); font-size:16.2px; line-height:1.4 }
+.gl-row .t{ font:700 17.5px/1.25 'NB Kalam',cursive }
+.gl-row:nth-child(odd){ background:rgba(255,253,246,.5) }
+.recap-pts li{ position:relative; padding-left:42px; margin:0 0 9px; font-size:17px; line-height:1.45; min-height:30px }
+.recap-pts li .num{ position:absolute; left:2px; top:-2px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; font:700 17px/1 'NB Kalam',cursive;
+  border:2.2px solid var(--red); color:var(--red); border-radius:48% 52% 45% 55%/55% 45% 55% 45%; background:var(--card); transform:rotate(3deg); padding-top:2px }
+
+/* ---------- cover ---------- */
+.page.cover .border{ position:absolute; left:0; top:0; width:794px; height:1122px; pointer-events:none }
+.page.cover .cv-in{ position:absolute; left:94px; right:84px; top:92px; bottom:112px; display:flex; flex-direction:column }
+.cv-tag{ text-align:center; font:italic 300 24px/1.2 'NB Kalam Light','NB Kalam',cursive; color:var(--ink-soft); margin-top:6px }
+.cv-title{ text-align:center; font:700 78px/1.08 'NB Kalam',cursive; margin:6px 0 0; letter-spacing:.5px; overflow-wrap:anywhere }
+.cv-ul{ display:block; width:76%; height:16px; margin:4px auto 0 }
+.cv-sub{ text-align:center; font:italic 300 25px/1.3 'NB Kalam Light','NB Kalam',cursive; color:var(--ink-soft); margin:16px 6px 0 }
+.cv-info{ text-align:center; font:400 17.5px/1.5 'NB Patrick',sans-serif; margin-top:10px }
+.cv-dgm{ margin:18px auto 0; width:100%; text-align:center; flex:0 0 auto }
+.cv-dgm svg{ display:block; margin:0 auto; width:100%; height:auto; max-height:260px }
+.cv-dgm .cap{ font:400 19px/1 'NB Caveat',cursive; color:var(--ink-soft) }
+.cv-low{ display:grid; grid-template-columns:1fr 262px; column-gap:26px; margin-top:auto; padding-top:10px; align-items:start; min-height:0; flex:1 1 auto }
+.cv-low h3{ font:700 21px/1.2 'NB Kalam',cursive; margin:0 0 8px; white-space:nowrap }
+.cv-toc{ list-style:none; margin:0; padding:0; font:400 16.5px/1.3 'NB Patrick',sans-serif }
+.cv-toc li{ margin:0 0 4px }
+.cv-toc.two{ columns:2; column-gap:18px; font-size:16.5px } .cv-toc.two li{ break-inside:avoid }
+.cv-toc.many{ font-size:15px; line-height:1.25 }
+.cv-side{ display:flex; flex-direction:column; gap:20px; align-items:stretch }
+.cv-idea{ background:var(--yellow); border:2px solid #9c7d0b; padding:13px 14px 15px; text-align:center; font:700 21px/1.3 'NB Kalam',cursive; transform:rotate(-2.3deg);
+  box-shadow:2px 4px 0 rgba(60,45,0,.35), 0 8px 10px -5px rgba(0,0,0,.35); border-radius:3px; position:relative; margin:6px 0 0 6px }
+.cv-idea::before{ content:""; position:absolute; top:-7px; left:50%; width:12px; height:12px; margin-left:-6px; border-radius:50%; background:#8d6a1e; box-shadow:1px 2px 0 rgba(0,0,0,.3) }
+.cv-how{ background:var(--yellow); border:2px solid #9c7d0b; border-radius:4px 3px 5px 3px; padding:9px 14px 12px; box-shadow:0 3px 0 -1px #b8960f, 2px 3px 0 rgba(60,45,0,.3); font:400 15px/1.4 'NB Patrick',sans-serif }
+.cv-how .rt{ font:italic 400 14px 'NB Kalam',cursive; color:var(--red) } .cv-how .q{ font:700 16px/1.3 'NB Kalam',cursive }
+.cv-sum{ font:italic 300 15px/1.45 'NB Kalam Light','NB Kalam',cursive; color:var(--ink-soft); text-align:right; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden }
+.cv-date{ position:absolute; left:112px; bottom:84px; font:italic 300 17px 'NB Kalam Light','NB Kalam',cursive; color:var(--ink-soft) }

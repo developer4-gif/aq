@@ -1,0 +1,870 @@
+{
+  "meta": {
+    "title": "Database Indexing Explained: B+ Trees, Composite & Covering Indexes",
+    "subtitle": "from full scans to B+ trees and covering indexes",
+    "source_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "channel": "Systems Deep Dive",
+    "duration": "0:58:00",
+    "language": "en",
+    "generated_on": "2026-10-23",
+    "model": "gemini/gemini-2.5-flash"
+  },
+  "cover": {
+    "tagline": "a student's own field notebook —",
+    "summary": "How relational databases use indexes to avoid scanning whole tables: the B+ tree structure, composite and covering indexes, reading query plans, the cost indexes add to writes, and a practical tuning workflow.",
+    "big_idea": "an index trades write speed for read speed!",
+    "toc": [
+      "2. why indexes exist",
+      "3. the B+ tree",
+      "4. reading the query plan",
+      "5. composite indexes",
+      "6. covering indexes",
+      "7. the write tax",
+      "8. when not to index",
+      "9. a tuning workflow",
+      "10. putting it together"
+    ]
+  },
+  "sections": [
+    {
+      "number": 2,
+      "title": "why indexes exist",
+      "subtitle": "avoiding the full scan",
+      "timestamp": "00:48",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Without an index the database has only one way to answer a filter: read every row of the table and test it (a sequential scan). Cost grows linearly with table size, so a query that is instant on 10k rows crawls on 100M."
+        },
+        {
+          "type": "definition",
+          "term": "index",
+          "text": "A separate, sorted data structure that maps column values to the location of matching rows, so the engine can jump straight to them."
+        },
+        {
+          "type": "bullets",
+          "items": [
+            "table data lives in unordered pages on disk (the heap)",
+            "an index stores (key -> row pointer) pairs in key order",
+            "lookups become logarithmic instead of linear",
+            "the price: extra disk space and slower writes"
+          ]
+        },
+        {
+          "type": "example",
+          "title": "find one user",
+          "text": "SELECT * FROM users WHERE email = 'a@b.com' scans millions of rows; with an index on email it touches a handful of pages."
+        }
+      ],
+      "diagram": {
+        "type": "compare",
+        "title": "scan vs lookup",
+        "caption": "same query, two very different amounts of work",
+        "nodes": [
+          {
+            "id": "seq",
+            "label": "sequential scan",
+            "detail": "read all N rows"
+          },
+          {
+            "id": "idx",
+            "label": "index lookup",
+            "detail": "read ~log N pages"
+          }
+        ],
+        "edges": []
+      },
+      "key_takeaways": [
+        "no index = read every row",
+        "an index is a sorted key -> row-pointer map",
+        "it speeds reads and taxes writes"
+      ],
+      "recall": {
+        "q": "What does an index change about how a filter query is answered?",
+        "a": "It replaces a linear scan of every row with a logarithmic lookup in a sorted structure that points to the matching rows."
+      },
+      "next": "pg. 3: the B+ tree"
+    },
+    {
+      "number": 3,
+      "title": "the B+ tree",
+      "subtitle": "what most indexes really are",
+      "timestamp": "08:30",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Most relational databases build indexes as B+ trees: a balanced tree where internal nodes only route the search and all keys with their row pointers live in the leaf level."
+        },
+        {
+          "type": "steps",
+          "items": [
+            "start at the root page",
+            "compare the search key with the separator keys to pick a child",
+            "repeat down the internal levels",
+            "land in a leaf and find the key",
+            "follow the row pointer into the table"
+          ]
+        },
+        {
+          "type": "definition",
+          "term": "fan-out",
+          "text": "How many children one node holds. Pages are large, so fan-out is in the hundreds and the tree stays very shallow."
+        },
+        {
+          "type": "formula",
+          "text": "height ~ log_fanout(N)"
+        },
+        {
+          "type": "callout",
+          "style": "note",
+          "text": "Leaves are linked in order, which is why range scans (BETWEEN, ORDER BY) are cheap: find the start, then walk sideways."
+        }
+      ],
+      "diagram": {
+        "type": "tree",
+        "title": "B+ tree lookup",
+        "caption": "internal nodes route, leaves hold the keys",
+        "nodes": [
+          {
+            "id": "root",
+            "label": "root page",
+            "detail": "separator keys"
+          },
+          {
+            "id": "l1",
+            "label": "internal A"
+          },
+          {
+            "id": "l2",
+            "label": "internal B"
+          },
+          {
+            "id": "lf1",
+            "label": "leaf 1-40"
+          },
+          {
+            "id": "lf2",
+            "label": "leaf 41-80"
+          },
+          {
+            "id": "lf3",
+            "label": "leaf 81-120"
+          }
+        ],
+        "edges": [
+          {
+            "from": "root",
+            "to": "l1"
+          },
+          {
+            "from": "root",
+            "to": "l2"
+          },
+          {
+            "from": "l1",
+            "to": "lf1"
+          },
+          {
+            "from": "l1",
+            "to": "lf2"
+          },
+          {
+            "from": "l2",
+            "to": "lf3"
+          }
+        ]
+      },
+      "key_takeaways": [
+        "B+ trees stay balanced and shallow",
+        "all data pointers sit in linked leaves",
+        "range queries walk the leaf chain"
+      ],
+      "recall": {
+        "q": "Why can a billion-row index be searched in only a few page reads?",
+        "a": "Fan-out is in the hundreds, so tree height is log base fan-out of N, which is just a few levels."
+      },
+      "next": "pg. 4: reading the query plan"
+    },
+    {
+      "number": 4,
+      "title": "reading the query plan",
+      "subtitle": "EXPLAIN is your microscope",
+      "timestamp": "17:05",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Never guess whether an index is used: ask the planner. EXPLAIN shows the chosen strategy and ANALYZE adds real timings and row counts."
+        },
+        {
+          "type": "code",
+          "language": "sql",
+          "code": "EXPLAIN ANALYZE\nSELECT * FROM orders\nWHERE customer_id = 42;"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "plan node",
+            "meaning"
+          ],
+          "rows": [
+            [
+              "Seq Scan",
+              "reads the whole table"
+            ],
+            [
+              "Index Scan",
+              "walks the index, then fetches rows from the table"
+            ],
+            [
+              "Index Only Scan",
+              "answers from the index alone"
+            ],
+            [
+              "Bitmap Heap Scan",
+              "collects many matches first, then reads table pages in order"
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "style": "tip",
+          "text": "Compare estimated rows with actual rows; a big gap usually means stale statistics."
+        }
+      ],
+      "diagram": {
+        "type": "sequence",
+        "title": "life of a query",
+        "caption": "the planner decides before anything runs",
+        "nodes": [
+          {
+            "id": "app",
+            "label": "client"
+          },
+          {
+            "id": "plan",
+            "label": "planner",
+            "detail": "uses table statistics"
+          },
+          {
+            "id": "exec",
+            "label": "executor"
+          },
+          {
+            "id": "idx",
+            "label": "index"
+          }
+        ],
+        "edges": [
+          {
+            "from": "app",
+            "to": "plan",
+            "label": "SQL text"
+          },
+          {
+            "from": "plan",
+            "to": "plan",
+            "label": "pick cheapest plan"
+          },
+          {
+            "from": "plan",
+            "to": "exec",
+            "label": "chosen plan"
+          },
+          {
+            "from": "exec",
+            "to": "idx",
+            "label": "look up key"
+          },
+          {
+            "from": "idx",
+            "to": "exec",
+            "label": "row pointers"
+          },
+          {
+            "from": "exec",
+            "to": "app",
+            "label": "result rows"
+          }
+        ]
+      },
+      "key_takeaways": [
+        "use EXPLAIN ANALYZE, do not guess",
+        "know Seq / Index / Index Only / Bitmap",
+        "estimates vs actuals expose bad statistics"
+      ],
+      "recall": {
+        "q": "How do you check whether a query actually uses your index?",
+        "a": "Run EXPLAIN (ANALYZE) and look at the scan node type and the estimated versus actual row counts."
+      },
+      "next": "pg. 5: composite indexes"
+    },
+    {
+      "number": 5,
+      "title": "composite indexes",
+      "subtitle": "column order matters",
+      "timestamp": "24:40",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "An index on several columns is sorted by the first column, then the second within equal firsts, and so on. It helps a query only if the filter uses a leftmost prefix of the columns."
+        },
+        {
+          "type": "code",
+          "language": "sql",
+          "code": "CREATE INDEX idx_orders_cust_date\n  ON orders (customer_id, created_at);"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "filter",
+            "uses the index?"
+          ],
+          "rows": [
+            [
+              "customer_id = 1",
+              "yes"
+            ],
+            [
+              "customer_id = 1 AND created_at > X",
+              "yes, both columns"
+            ],
+            [
+              "created_at > X",
+              "no, skips the leftmost column"
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "style": "warning",
+          "text": "Put equality columns first and the range column last; a range on an early column stops the later columns from narrowing the search."
+        }
+      ],
+      "diagram": {
+        "type": "stack",
+        "title": "sort order inside the index",
+        "caption": "customer_id is the major sort key",
+        "nodes": [
+          {
+            "id": "c",
+            "label": "customer_id",
+            "detail": "sorted first"
+          },
+          {
+            "id": "d",
+            "label": "created_at",
+            "detail": "sorted within each customer"
+          },
+          {
+            "id": "p",
+            "label": "row pointer",
+            "detail": "points into the table"
+          }
+        ],
+        "edges": []
+      },
+      "key_takeaways": [
+        "leftmost-prefix rule",
+        "equality columns first, range last",
+        "one composite index can replace several single ones"
+      ],
+      "recall": {
+        "q": "Why does an index on (a, b) not help a query that filters only on b?",
+        "a": "It is sorted by a first, so the b values are scattered across the whole index and cannot be binary-searched."
+      },
+      "next": "pg. 6: covering indexes"
+    },
+    {
+      "number": 6,
+      "title": "covering indexes",
+      "subtitle": "never touch the table",
+      "timestamp": "31:15",
+      "blocks": [
+        {
+          "type": "definition",
+          "term": "covering index",
+          "text": "An index that contains every column the query needs, so the engine returns results from the index alone (an index-only scan)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Normally each match costs an extra random read into the table to fetch the row. A covering index removes that hop."
+        },
+        {
+          "type": "example",
+          "title": "cover a dashboard query",
+          "text": "SELECT status, count(*) FROM orders WHERE customer_id = 42 GROUP BY status can be served entirely by an index on (customer_id, status)."
+        },
+        {
+          "type": "bullets",
+          "items": [
+            "extra INCLUDE columns can ride along without being sort keys",
+            "wider indexes are bigger and cost more on writes",
+            "cover only the hottest queries"
+          ]
+        }
+      ],
+      "diagram": {
+        "type": "flow",
+        "title": "index scan vs index-only scan",
+        "caption": "the table hop disappears",
+        "nodes": [
+          {
+            "id": "k",
+            "label": "find key in index"
+          },
+          {
+            "id": "t",
+            "label": "fetch row from table",
+            "detail": "extra random read"
+          },
+          {
+            "id": "o",
+            "label": "return row"
+          }
+        ],
+        "edges": [
+          {
+            "from": "k",
+            "to": "t",
+            "label": "normal"
+          },
+          {
+            "from": "t",
+            "to": "o"
+          },
+          {
+            "from": "k",
+            "to": "o",
+            "label": "covering"
+          }
+        ]
+      },
+      "key_takeaways": [
+        "covering = all needed columns live in the index",
+        "saves one table read per match",
+        "do not over-widen indexes"
+      ],
+      "recall": {
+        "q": "What makes an index covering, and what does it save?",
+        "a": "It holds every column the query uses, saving the random table read for each matching row."
+      },
+      "next": "pg. 7: the write tax"
+    },
+    {
+      "number": 7,
+      "title": "the write tax",
+      "subtitle": "every index slows INSERT",
+      "timestamp": "38:20",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Each insert, update of an indexed column, or delete must also modify every index on the table. More indexes means more pages written and more locking."
+        },
+        {
+          "type": "steps",
+          "items": [
+            "insert the row into the table",
+            "for each index, find the correct leaf",
+            "insert the key into the leaf",
+            "if the leaf is full, split it and update the parent",
+            "repeat for the next index"
+          ]
+        },
+        {
+          "type": "definition",
+          "term": "page split",
+          "text": "When a full leaf page receives a new key it is divided in two; this costs extra I/O and can fragment the index."
+        },
+        {
+          "type": "callout",
+          "style": "warning",
+          "text": "A table with 10 indexes does roughly 10 index writes per row inserted."
+        }
+      ],
+      "diagram": {
+        "type": "cycle",
+        "title": "cost of one insert",
+        "caption": "repeated for every index on the table",
+        "nodes": [
+          {
+            "id": "a",
+            "label": "write row"
+          },
+          {
+            "id": "b",
+            "label": "find leaf"
+          },
+          {
+            "id": "c",
+            "label": "insert key"
+          },
+          {
+            "id": "d",
+            "label": "split if full"
+          }
+        ],
+        "edges": [
+          {
+            "from": "a",
+            "to": "b"
+          },
+          {
+            "from": "b",
+            "to": "c"
+          },
+          {
+            "from": "c",
+            "to": "d"
+          },
+          {
+            "from": "d",
+            "to": "a",
+            "label": "next index"
+          }
+        ]
+      },
+      "key_takeaways": [
+        "writes touch every index",
+        "page splits add I/O",
+        "index only what queries need"
+      ],
+      "recall": {
+        "q": "Why can adding many indexes make a write-heavy table slower?",
+        "a": "Every insert or update must also be applied to each index, including leaf lookups and possible page splits."
+      },
+      "next": "pg. 8: when not to index"
+    },
+    {
+      "number": 8,
+      "title": "when not to index",
+      "subtitle": "low value, high cost",
+      "timestamp": "44:10",
+      "blocks": [
+        {
+          "type": "bullets",
+          "items": [
+            "tiny tables: a sequential scan is already cheap",
+            "low-cardinality columns (e.g. a boolean) match too many rows to be selective",
+            "columns that are rarely filtered or joined",
+            "write-heavy tables where read speed is not critical"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "The planner will ignore an index if it expects to read a large fraction of the table anyway, because many random index hops cost more than one sequential pass."
+        },
+        {
+          "type": "table",
+          "headers": [
+            "situation",
+            "index?",
+            "why"
+          ],
+          "rows": [
+            [
+              "email lookup",
+              "yes",
+              "highly selective"
+            ],
+            [
+              "is_active flag",
+              "usually no",
+              "matches half the table"
+            ],
+            [
+              "10-row lookup table",
+              "no",
+              "scan is cheaper"
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "style": "tip",
+          "text": "A partial index (only the rows that matter) can rescue a skewed boolean column."
+        }
+      ],
+      "diagram": {
+        "type": "compare",
+        "title": "selective vs unselective",
+        "caption": "selectivity decides the value of an index",
+        "nodes": [
+          {
+            "id": "hi",
+            "label": "selective column",
+            "detail": "few rows match, index wins"
+          },
+          {
+            "id": "lo",
+            "label": "unselective column",
+            "detail": "many rows match, scan wins"
+          }
+        ],
+        "edges": []
+      },
+      "key_takeaways": [
+        "selectivity is what makes an index pay off",
+        "skip indexes on tiny or write-heavy tables",
+        "partial indexes help skewed data"
+      ],
+      "recall": {
+        "q": "Why might the planner ignore an index on a boolean column?",
+        "a": "Half the table matches, so many random index hops cost more than one sequential scan."
+      },
+      "next": "pg. 9: a tuning workflow"
+    },
+    {
+      "number": 9,
+      "title": "a tuning workflow",
+      "subtitle": "measure, change, re-measure",
+      "timestamp": "49:30",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "find the slow query from logs or monitoring",
+            "run EXPLAIN ANALYZE on it",
+            "form a hypothesis (missing index, wrong column order, stale stats)",
+            "create or adjust one index",
+            "re-run EXPLAIN and compare timings",
+            "drop indexes that no query uses"
+          ]
+        },
+        {
+          "type": "callout",
+          "style": "note",
+          "text": "Change one thing at a time, otherwise you cannot tell which change helped."
+        },
+        {
+          "type": "paragraph",
+          "text": "Indexes are a living part of the schema: revisit them as query patterns change and remove the unused ones to reclaim write speed and disk."
+        }
+      ],
+      "diagram": {
+        "type": "timeline",
+        "title": "index strategy over time",
+        "caption": "start simple, add only on evidence",
+        "nodes": [
+          {
+            "id": "t1",
+            "label": "no index",
+            "detail": "baseline"
+          },
+          {
+            "id": "t2",
+            "label": "single column",
+            "detail": "fix the worst query"
+          },
+          {
+            "id": "t3",
+            "label": "composite",
+            "detail": "match filter + sort"
+          },
+          {
+            "id": "t4",
+            "label": "covering",
+            "detail": "hot paths only"
+          },
+          {
+            "id": "t5",
+            "label": "prune",
+            "detail": "drop unused"
+          }
+        ],
+        "edges": []
+      },
+      "key_takeaways": [
+        "measure before and after",
+        "one change at a time",
+        "prune unused indexes"
+      ],
+      "recall": {
+        "q": "Describe the loop you follow when tuning a slow query with indexes.",
+        "a": "Find it, EXPLAIN ANALYZE it, hypothesise, change one index, re-measure, and drop indexes nobody uses."
+      },
+      "next": "pg. 10: putting it together"
+    },
+    {
+      "number": 10,
+      "title": "putting it together",
+      "subtitle": "the index checklist",
+      "timestamp": "54:05",
+      "blocks": [
+        {
+          "type": "bullets",
+          "items": [
+            "index the columns you filter, join and sort on",
+            "order composite columns: equality first, range last",
+            "cover the hottest read paths",
+            "weigh each index against its write cost",
+            "verify with EXPLAIN ANALYZE"
+          ]
+        },
+        {
+          "type": "formula",
+          "text": "benefit = reads saved - write cost - storage"
+        }
+      ],
+      "diagram": {
+        "type": "mindmap",
+        "title": "the indexing checklist",
+        "caption": "what to weigh before adding an index",
+        "nodes": [
+          {
+            "id": "idx",
+            "label": "indexing"
+          },
+          {
+            "id": "when",
+            "label": "when to add",
+            "parent": "idx"
+          },
+          {
+            "id": "filter",
+            "label": "filter, join, sort columns",
+            "parent": "when"
+          },
+          {
+            "id": "hot",
+            "label": "hot read paths",
+            "parent": "when"
+          },
+          {
+            "id": "how",
+            "label": "how to design",
+            "parent": "idx"
+          },
+          {
+            "id": "order",
+            "label": "equality before range",
+            "parent": "how"
+          },
+          {
+            "id": "cover",
+            "label": "cover frequent queries",
+            "parent": "how"
+          },
+          {
+            "id": "cost",
+            "label": "what it costs",
+            "parent": "idx"
+          },
+          {
+            "id": "write",
+            "label": "slower writes",
+            "parent": "cost"
+          },
+          {
+            "id": "verify",
+            "label": "verify with EXPLAIN ANALYZE",
+            "parent": "idx"
+          }
+        ],
+        "edges": []
+      },
+      "key_takeaways": [
+        "indexes trade write speed and space for read speed",
+        "always verify with the planner"
+      ],
+      "recall": {
+        "q": "What is the one-sentence rule for deciding whether to add an index?",
+        "a": "Add it when the reads it saves on selective, frequent queries outweigh the extra write and storage cost, and confirm with EXPLAIN."
+      },
+      "next": "pg. 11: the whole picture, recapped"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "index",
+      "definition": "Sorted structure mapping column values to row locations."
+    },
+    {
+      "term": "B+ tree",
+      "definition": "Balanced tree with routing nodes above and linked key-bearing leaves."
+    },
+    {
+      "term": "fan-out",
+      "definition": "Number of children per tree node; large fan-out keeps the tree shallow."
+    },
+    {
+      "term": "sequential scan",
+      "definition": "Reading every row of a table to test a filter."
+    },
+    {
+      "term": "composite index",
+      "definition": "Index over several columns, sorted by the first, then the next."
+    },
+    {
+      "term": "leftmost prefix",
+      "definition": "Rule that a composite index helps only if the filter uses its first column(s)."
+    },
+    {
+      "term": "covering index",
+      "definition": "Index containing all columns a query needs, enabling an index-only scan."
+    },
+    {
+      "term": "selectivity",
+      "definition": "How small a fraction of rows a filter matches; high selectivity favours an index."
+    },
+    {
+      "term": "page split",
+      "definition": "Dividing a full index page in two when a new key arrives."
+    },
+    {
+      "term": "query planner",
+      "definition": "Component that chooses the cheapest execution strategy using statistics."
+    }
+  ],
+  "recap": {
+    "title": "the whole picture, recapped",
+    "points": [
+      "an index is a sorted key -> row-pointer map, usually a B+ tree",
+      "shallow trees make lookups logarithmic and ranges cheap",
+      "EXPLAIN ANALYZE tells you what the planner really does",
+      "composite order and covering columns decide how much work remains",
+      "every index taxes writes and storage, so index selectively and prune"
+    ],
+    "diagram": {
+      "type": "flow",
+      "title": "from slow query to fast query",
+      "caption": "the tuning loop in one picture",
+      "nodes": [
+        {
+          "id": "q",
+          "label": "slow query"
+        },
+        {
+          "id": "e",
+          "label": "EXPLAIN ANALYZE"
+        },
+        {
+          "id": "i",
+          "label": "adjust index"
+        },
+        {
+          "id": "m",
+          "label": "re-measure"
+        }
+      ],
+      "edges": [
+        {
+          "from": "q",
+          "to": "e"
+        },
+        {
+          "from": "e",
+          "to": "i"
+        },
+        {
+          "from": "i",
+          "to": "m"
+        },
+        {
+          "from": "m",
+          "to": "e",
+          "label": "repeat"
+        }
+      ]
+    }
+  }
+}

@@ -247,9 +247,11 @@
     left.appendChild(h1); left.appendChild(homeCount); left.appendChild(overallEl());
     var nb = AQ.water.button("New playlist", { icon: "plus", onActivate: function (b) { openPlaylistForm(null, b); } });
     var headActs = el("div", "pagehead__actions");
-    var impBtn = button("Import from YouTube", { cls: "btn btn--ghost", icon: "youtube" });
+    var impBtn = AQ.water.button("Import from YouTube", {
+      icon: "youtube",
+      onActivate: function (b) { if (AQ.importPlaylist) AQ.importPlaylist.open(b); }
+    });
     impBtn.setAttribute("data-act", "import");
-    impBtn.addEventListener("click", function () { if (AQ.importPlaylist) AQ.importPlaylist.open(impBtn); });
     headActs.appendChild(impBtn); headActs.appendChild(nb);
     head.appendChild(left); head.appendChild(headActs);
     view.appendChild(head);

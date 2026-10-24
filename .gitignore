@@ -15,3 +15,13 @@ dist/
 # Local IDE and OS files
 .vscode/
 .DS_Store
+
+# AQ Learning (lecture notes)
+.venv/
+**/output/
+aq-api/data/
+*.db
+__pycache__/
+.pytest_cache/
+*.egg-info/
+.run/

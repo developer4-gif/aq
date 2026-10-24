@@ -3,6 +3,7 @@
 Routes:
     GET  /                          frontend
     GET  /api/providers
+    GET  /api/playlist?url=...      list the videos of a YouTube playlist (metadata only)
     POST /api/jobs
     GET  /api/jobs/<id>
     GET  /api/jobs/<id>/notes.json | notes.pdf | notes.html
@@ -140,6 +141,8 @@ class State:
         self.jobs: dict[str, dict] = {}
         self.lock = threading.Lock()
         self.recent: deque[float] = deque()
+        self.recent_playlist: deque[float] = deque()   # separate bucket so playlist lookups can't starve note jobs
+        self.playlist_slots = threading.BoundedSemaphore(2)  # at most 2 yt-dlp playlist fetches at once
 
     # modules are looked up here so tests can monkeypatch `load_modules`
     def load_modules(self):
@@ -157,14 +160,15 @@ class State:
     def active_count(self) -> int:
         return sum(1 for j in self.jobs.values() if j["status"] in ("queued", "running"))
 
-    def rate_limited(self) -> bool:
+    def rate_limited(self, bucket: deque | None = None) -> bool:
         n, window = self.rate_limit
+        recent = self.recent if bucket is None else bucket
         now = time.monotonic()
-        while self.recent and now - self.recent[0] > window:
-            self.recent.popleft()
-        if len(self.recent) >= n:
+        while recent and now - recent[0] > window:
+            recent.popleft()
+        if len(recent) >= n:
             return True
-        self.recent.append(now)
+        recent.append(now)
         return False
 
     def prune_memory(self, max_age_sec: int = 24 * 3600):
@@ -351,14 +355,17 @@ def create_app(config: dict | None = None) -> Flask:
         if not LOCAL_HOST_RE.match(request.host or ""):
             return jsonify(error="Forbidden host."), 403
         origin = request.headers.get("Origin")
-        if origin and request.method == "POST" and not LOCAL_ORIGIN_RE.match(origin):
+        # POSTs, and the GET that makes the server call out to YouTube, must come from a local page
+        if origin and (request.method == "POST" or request.path == "/api/playlist") \
+                and not LOCAL_ORIGIN_RE.match(origin):
             return jsonify(error="Forbidden origin."), 403
         return None
 
     @app.after_request
     def _headers(resp: Response):
         resp.headers["X-Content-Type-Options"] = "nosniff"
-        resp.headers["X-Frame-Options"] = "SAMEORIGIN"
+        if not request.path.endswith("/notes.html"):
+            resp.headers["X-Frame-Options"] = "SAMEORIGIN"
         resp.headers["Referrer-Policy"] = "no-referrer"
         resp.headers["Cross-Origin-Resource-Policy"] = "same-origin"
         resp.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
@@ -520,6 +527,54 @@ def create_app(config: dict | None = None) -> Flask:
         t.start()
         return jsonify(job_id=job_id), 202
 
+    @app.get("/api/playlist")
+    def playlist():
+        """GET /api/playlist?url=<YouTube playlist link> -> {id,title,channel,count,videos,truncated,skipped}."""
+        url = request.args.get("url", "")
+        if not isinstance(url, str) or not url.strip():
+            return bad("Please paste a YouTube playlist link.")
+        url = url.strip()
+        if len(url) > 2048:
+            return bad("That link is too long.")
+        try:
+            ingest = state.load_ingest()
+        except ImportError:
+            return bad("The notes engine is not fully installed yet.", 503)
+        IngestError = getattr(ingest, "IngestError", ())
+        get_playlist = getattr(ingest, "get_playlist", None)
+        if get_playlist is None:
+            return bad("This server is too old to import playlists - restart it with start.ps1.", 503)
+        # cheap local validation first (also the SSRF guard) so junk never costs a rate-limit slot
+        parse_id = getattr(ingest, "parse_playlist_id", None)
+        try:
+            if parse_id is not None:
+                parse_id(url)
+        except Exception as e:
+            if IngestError and isinstance(e, IngestError):
+                return bad(str(e) or "That does not look like a YouTube playlist link.",
+                           getattr(e, "status", 400))
+            return bad("That does not look like a YouTube playlist link.")
+
+        with state.lock:
+            if state.rate_limited(state.recent_playlist):
+                return bad("Too many requests - please slow down a little.", 429)
+        if not state.playlist_slots.acquire(blocking=False):
+            return bad("The server is busy reading another playlist. Please try again in a moment.", 429)
+        try:
+            data = get_playlist(url)
+        except Exception as e:
+            if IngestError and isinstance(e, IngestError):
+                msg = _redact(str(e), ()).strip() or "Couldn't read that playlist."
+                log.warning("playlist lookup failed (%s)", type(e).__name__)
+                return bad(msg[:600], getattr(e, "status", 400))
+            log.error("playlist lookup crashed: %s: %s", type(e).__name__, _redact(e))
+            return bad("Couldn't read that playlist from YouTube. Please try again in a moment.", 502)
+        finally:
+            state.playlist_slots.release()
+        if not isinstance(data, dict):
+            return bad("Couldn't read that playlist from YouTube. Please try again in a moment.", 502)
+        return jsonify(data)
+
     def valid_job(job_id: str):
         return bool(JOB_ID_RE.match(job_id or ""))
 
@@ -581,7 +636,10 @@ def create_app(config: dict | None = None) -> Flask:
             digest = base64.b64encode(hashlib.sha256(m.group(1).encode("utf-8")).digest()).decode("ascii")
             hashes.append(f"'sha256-{digest}'")
         resp.headers["Content-Security-Policy"] = CSP_NOTES.replace(
-            "default-src 'none';", "default-src 'none'; script-src " + (" ".join(hashes) or "'none'") + ";", 1)
+            "default-src 'none';", "default-src 'none'; script-src " + (" ".join(hashes) or "'none'") + ";", 1
+        ).replace("frame-ancestors 'self'", "frame-ancestors 'self' http://127.0.0.1:* http://localhost:*")
+        # Only this read-only page may be embedded by the local UI (another port = another origin); CSP frame-ancestors
+        # supersedes X-Frame-Options, which _headers() omits for this route only.
         return resp
 
     return app

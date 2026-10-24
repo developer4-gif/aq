@@ -1,0 +1,15 @@
+{
+  "name": "aq-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AQ Learning application backend: users, playlists, videos, watch progress, notes records. Python service stays the AI/media worker.",
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test --test-concurrency=1 \"test/*.test.js\""
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}

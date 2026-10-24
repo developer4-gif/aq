@@ -1,0 +1,2540 @@
+{
+  "meta": {
+    "title": "AQ Learning",
+    "subtitle": "lecture playlists, watch progress and AI hand-drawn notes - the whole system",
+    "source_url": "",
+    "channel": "UI + Node API + Python worker",
+    "duration": "",
+    "language": "en",
+    "generated_on": "2026-10-24",
+    "model": "hand-written"
+  },
+  "cover": {
+    "tagline": "a developer's own field notebook —",
+    "summary": "Three small programs: a vanilla-JS UI, a Node + SQLite app backend and a Python AI worker. Every file, data store and request, mapped end to end.",
+    "big_idea": "Node owns state, Python owns the slow AI work!",
+    "toc": [
+      "2. architecture, the 30,000ft map",
+      "3. tech stack",
+      "4. repo layout",
+      "5. data layer",
+      "6. request flow: get notes",
+      "7. watch & resume flow",
+      "8. notes pipeline in Python",
+      "9. ingest.py: transcripts",
+      "10. llm.py & prompts.py",
+      "11. notes_schema.py: contract",
+      "12. pdf.py: the notebook",
+      "13. Flask server: the worker",
+      "14. python files, one line each",
+      "15. UI core files",
+      "16. UI feature modules",
+      "17. api.js: the sync adapter",
+      "18. aq-api: the Node backend",
+      "19. playlist import flow",
+      "20. progress calculation",
+      "21. security",
+      "22. run & deploy",
+      "23. tests & quality",
+      "24. limits & future scope"
+    ]
+  },
+  "sections": [
+    {
+      "number": 2,
+      "title": "architecture, the 30,000ft map",
+      "subtitle": "three programs, one job each",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "AQ Learning turns YouTube lectures into playlists you can watch in order, with resume-where-you-left-off progress and hand-drawn study notes. It is **three small programs**, not one big one, and each has exactly one job."
+        },
+        {
+          "type": "bullets",
+          "items": [
+            "**lecture-notes-ui** - vanilla JS single page: playlists, player, progress bars, notes viewer. No build step.",
+            "**aq-api** (Node + Express + SQLite, :5180) - the application backend: users, playlists, videos, watch progress, notes records cached by video_id. Serves the UI too.",
+            "**lecture-notes-ai** (Python + Flask, :5055) - the AI/media worker: YouTube transcript, LLM notes, PDF. Knows nothing about users."
+          ]
+        },
+        {
+          "type": "callout",
+          "style": "note",
+          "text": "Rule of thumb: Node owns state and identity, Python owns slow, expensive, stateless work. The UI only ever talks to one door (:5180); Node calls Python on 127.0.0.1."
+        }
+      ],
+      "diagram": {
+        "type": "flow",
+        "title": "the big picture",
+        "caption": "browser -> Node (state) -> Python (AI) -> the internet",
+        "nodes": [
+          {
+            "id": "ui",
+            "label": "browser UI",
+            "detail": "vanilla JS, no build"
+          },
+          {
+            "id": "api",
+            "label": "aq-api (Node)",
+            "detail": "Express + SQLite :5180"
+          },
+          {
+            "id": "db",
+            "label": "SQLite",
+            "detail": "aq.db on disk"
+          },
+          {
+            "id": "py",
+            "label": "AI worker (Python)",
+            "detail": "Flask :5055"
+          },
+          {
+            "id": "yt",
+            "label": "YouTube",
+            "detail": "captions, metadata"
+          },
+          {
+            "id": "llm",
+            "label": "LLM provider",
+            "detail": "Gemini, Groq, ..."
+          }
+        ],
+        "edges": [
+          {
+            "from": "ui",
+            "to": "api",
+            "label": "REST /api/*"
+          },
+          {
+            "from": "api",
+            "to": "db",
+            "label": "SQL"
+          },
+          {
+            "from": "api",
+            "to": "py",
+            "label": "jobs"
+          },
+          {
+            "from": "py",
+            "to": "yt",
+            "label": "captions"
+          },
+          {
+            "from": "py",
+            "to": "llm",
+            "label": "notes"
+          }
+        ]
+      },
+      "key_takeaways": [
+        "Three programs, one job each: UI shows, Node remembers, Python generates.",
+        "The UI has one front door (:5180); Python is an internal worker on localhost.",
+        "Node is the place future auth (OAuth) plugs in, so Python never needs users."
+      ],
+      "recall": {
+        "q": "Walk me through the architecture in one breath.",
+        "a": "Browser UI -> aq-api (Express, auth middleware, SQLite for playlists/progress/notes records) -> for new notes it calls the Python worker, which fetches the transcript from YouTube, has an LLM write notes, validates them and renders HTML/PDF."
+      },
+      "next": "pg. 3: tech stack"
+    },
+    {
+      "number": 3,
+      "title": "tech stack",
+      "subtitle": "boring tools on purpose",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "table",
+          "headers": [
+            "layer",
+            "tech",
+            "why this one"
+          ],
+          "rows": [
+            [
+              "UI",
+              "vanilla JS + CSS, IIFE modules on `window.AQ`",
+              "no build, no npm; opens anywhere"
+            ],
+            [
+              "App backend",
+              "Node >= 24, Express 5, built-in `node:sqlite`",
+              "one file DB, zero native deps"
+            ],
+            [
+              "AI worker",
+              "Python 3.10+, Flask, flask-cors, python-dotenv",
+              "best ecosystem for transcripts + yt-dlp"
+            ],
+            [
+              "Transcripts",
+              "youtube-transcript-api, yt-dlp, ffmpeg, Groq Whisper",
+              "a 3-step fallback chain"
+            ],
+            [
+              "LLMs",
+              "Gemini, Groq, xAI Grok, Hugging Face via plain `requests`",
+              "no vendor SDKs, swap freely"
+            ],
+            [
+              "Notebook look",
+              "Rough.js, bundled fonts (Kalam, Patrick Hand, Caveat)",
+              "sketchy, self-contained"
+            ],
+            [
+              "PDF",
+              "headless Edge/Chrome `--print-to-pdf`, PyMuPDF for checks",
+              "HTML -> A4, page numbers verified"
+            ],
+            [
+              "Tests",
+              "pytest (Python, all network mocked), `node --test` (Node)",
+              "no live calls needed"
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "style": "tip",
+          "text": "Pattern: every dependency earns its place. The Python engine uses `requests` directly instead of five vendor SDKs, and the UI avoids a framework so it needs no toolchain."
+        }
+      ],
+      "diagram": {
+        "type": "stack",
+        "title": "the stack, top to bottom",
+        "caption": "each layer only talks to the one below",
+        "nodes": [
+          {
+            "id": "a",
+            "label": "UI",
+            "detail": "vanilla JS/CSS (browser)"
+          },
+          {
+            "id": "b",
+            "label": "aq-api",
+            "detail": "Node 24 + Express 5 + node:sqlite"
+          },
+          {
+            "id": "c",
+            "label": "notes worker",
+            "detail": "Python Flask + notes_engine"
+          },
+          {
+            "id": "d",
+            "label": "ingest + llm + pdf",
+            "detail": "requests, yt-dlp, headless Edge"
+          },
+          {
+            "id": "e",
+            "label": "outside world",
+            "detail": "YouTube + AI providers"
+          }
+        ],
+        "edges": []
+      },
+      "key_takeaways": [
+        "No framework on the UI, no SDKs in the worker, no native DB driver in Node.",
+        "Python is the only place that needs pip packages; Node needs just Express.",
+        "Edge or Chrome is only needed to print PDFs; HTML and JSON work without it."
+      ],
+      "recall": {
+        "q": "Why plain `requests` instead of each provider's SDK?",
+        "a": "Four providers means four SDKs to install and keep compatible. One small `_Client` speaks the OpenAI-style or Gemini JSON over HTTP, handles retries and key scrubbing in one place, and adding a provider is a table entry."
+      },
+      "next": "pg. 4: repo layout"
+    },
+    {
+      "number": 4,
+      "title": "repo layout",
+      "subtitle": "one workspace, three apps + docs",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Everything lives under `D:\\AQspace`. The three apps are siblings with no shared code; they only share an HTTP contract. Two old folders are leftovers."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "D:\\AQspace\n  lecture-notes-ui\\   UI: index.html + 13 .js + styles.css (no build)\n  aq-api\\             Node app backend: src/ sql/ test/ data/aq.db\n  lecture-notes-ai\\   Python worker\n     notes_engine\\    ingest llm prompts notes_schema pdf\n     backend\\         Flask server.py + run.py + .env\n     frontend\\        old standalone page (still works)\n     tests\\ docs\\     pytest suites, notes-schema.md\n  docs\\               this notebook + ARCHITECTURE.md\n  backend\\ frontend\\  empty Vite/Express scaffolds (unused)"
+        },
+        {
+          "type": "callout",
+          "style": "warning",
+          "text": "`D:\\AQspace\\backend` (port 3005 hello-world) and `D:\\AQspace\\frontend` (React + Vite template) are unrelated scaffolds, not part of the running system."
+        }
+      ],
+      "diagram": {
+        "type": "tree",
+        "title": "repo tree",
+        "caption": "what each folder is for",
+        "nodes": [
+          {
+            "id": "root",
+            "label": "D:\\AQspace"
+          },
+          {
+            "id": "ui",
+            "label": "lecture-notes-ui",
+            "detail": "the screens"
+          },
+          {
+            "id": "api",
+            "label": "aq-api",
+            "detail": "state + auth door"
+          },
+          {
+            "id": "ai",
+            "label": "lecture-notes-ai",
+            "detail": "AI/media worker"
+          },
+          {
+            "id": "docs",
+            "label": "docs",
+            "detail": "notebook + architecture"
+          },
+          {
+            "id": "eng",
+            "label": "notes_engine",
+            "detail": "ingest, llm, pdf"
+          },
+          {
+            "id": "be",
+            "label": "backend",
+            "detail": "Flask server"
+          }
+        ],
+        "edges": [
+          {
+            "from": "root",
+            "to": "ui"
+          },
+          {
+            "from": "root",
+            "to": "api"
+          },
+          {
+            "from": "root",
+            "to": "ai"
+          },
+          {
+            "from": "root",
+            "to": "docs"
+          },
+          {
+            "from": "ai",
+            "to": "eng"
+          },
+          {
+            "from": "ai",
+            "to": "be"
+          }
+        ]
+      },
+      "key_takeaways": [
+        "lecture-notes-ui, aq-api and lecture-notes-ai are independent siblings.",
+        "notes_engine is a pip-installable package: CLI, library and web all use it.",
+        "Only an HTTP contract connects the apps, so each can be replaced alone."
+      ],
+      "recall": {
+        "q": "Why keep the UI, API and worker in separate folders?",
+        "a": "Different runtimes and different change rates: UI is static files, Node is stateful, Python is heavy and stateless. The seams are HTTP contracts, so any one can be swapped or deployed separately."
+      },
+      "next": "pg. 5: data layer"
+    },
+    {
+      "number": 5,
+      "title": "data layer",
+      "subtitle": "where each byte lives",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "State is split by **who owns it**. Users' playlists and progress belong in the app database; generated files belong in the worker's job folders; the browser keeps only caches."
+        },
+        {
+          "type": "table",
+          "headers": [
+            "place",
+            "what",
+            "lifetime"
+          ],
+          "rows": [
+            [
+              "SQLite `aq-api/data/aq.db`",
+              "users, videos, playlists, playlist_videos, watch_progress, notes_jobs",
+              "permanent"
+            ],
+            [
+              "localStorage `aq.playlists.v1`",
+              "playlists + videos (UI-side copy / offline)",
+              "per browser"
+            ],
+            [
+              "localStorage `aq.watch.v1`",
+              "{videoId: {pos, dur, done, updated}}",
+              "per browser"
+            ],
+            [
+              "localStorage `aq.notes.v1`",
+              "{videoId: {jobId, state}} to resume polling",
+              "per browser"
+            ],
+            [
+              "localStorage `aq.dirty.v1`",
+              "\"1\" = local edits not yet sent to aq-api",
+              "per browser"
+            ],
+            [
+              "Python memory `State.jobs`",
+              "job status, progress, links",
+              "until restart / 24h"
+            ],
+            [
+              "`backend/output/<job_id>/`",
+              "notes.json, notes.html, notes.pdf",
+              "deleted after 24h"
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "style": "note",
+          "text": "The old standalone page also stores `lna.key.<provider>` and `lna.provider` (API key, only if you tick Remember). Keys are never written to disk server-side."
+        }
+      ],
+      "diagram": {
+        "type": "compare",
+        "title": "browser copy vs app database",
+        "caption": "the UI-side cache and the Node source of truth",
+        "nodes": [
+          {
+            "id": "a",
+            "label": "localStorage",
+            "detail": "fast, per browser, offline-ok"
+          },
+          {
+            "id": "b",
+            "label": "SQLite via aq-api",
+            "detail": "shared, durable, per user"
+          },
+          {
+            "id": "c",
+            "label": "worker folders",
+            "detail": "generated files, 24h TTL"
+          }
+        ],
+        "edges": []
+      },
+      "key_takeaways": [
+        "Playlists and progress are durable data: they live in SQLite behind Node.",
+        "Python holds only temporary job state and files; a restart loses job ids.",
+        "The notes record cached by video_id means two users never pay twice for one video."
+      ],
+      "recall": {
+        "q": "Why cache notes by video_id in Node when Python already writes files?",
+        "a": "Python's files are temporary (24h) and its job ids die on restart. A Node record keyed by the 11-char video id survives, so a video is generated once and every playlist, user and device reuses it."
+      },
+      "next": "pg. 6: request flow: get notes"
+    },
+    {
+      "number": 6,
+      "title": "request flow: get notes",
+      "subtitle": "click to PDF, end to end",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "The slowest path in the system. The UI never waits on one long request: it starts a job and **polls**."
+        },
+        {
+          "type": "steps",
+          "items": [
+            "UI sends `POST /api/v1/notes/<videoId>` to aq-api (video must be in one of the user's playlists).",
+            "Node checks `notes_jobs` for a live record of that video_id; done or running is returned at once (200), nothing new starts.",
+            "On a miss Node calls Python `POST /api/jobs` {url, provider}, gets a job_id and inserts a queued record (202).",
+            "Python thread: transcript (0-25%), LLM notes (25-85%), HTML+PDF (85-100%).",
+            "UI polls `GET /api/v1/notes/<videoId>` about every 1.5 s; Node refreshes from Python `GET /api/jobs/<id>` at most every 0.8 s.",
+            "On done Node marks the record done; the UI frames `/notes/<videoId>/html`, which Node streams from Python."
+          ]
+        },
+        {
+          "type": "callout",
+          "style": "tip",
+          "text": "Max 2 jobs run at once on the server; the UI queues extra videos client-side. When `AQ.api.available()` is false the UI falls back to calling Python on :5055 directly."
+        }
+      ],
+      "diagram": {
+        "type": "sequence",
+        "title": "notes generation",
+        "caption": "polling, not waiting",
+        "nodes": [
+          {
+            "id": "ui",
+            "label": "browser UI"
+          },
+          {
+            "id": "api",
+            "label": "aq-api"
+          },
+          {
+            "id": "py",
+            "label": "Python worker"
+          },
+          {
+            "id": "ext",
+            "label": "YouTube + LLM"
+          }
+        ],
+        "edges": [
+          {
+            "from": "ui",
+            "to": "api",
+            "label": "POST /notes/:videoId"
+          },
+          {
+            "from": "api",
+            "to": "py",
+            "label": "POST /api/jobs"
+          },
+          {
+            "from": "py",
+            "to": "ext",
+            "label": "transcript + prompts"
+          },
+          {
+            "from": "ext",
+            "to": "py",
+            "label": "captions, notes JSON"
+          },
+          {
+            "from": "ui",
+            "to": "api",
+            "label": "poll status"
+          },
+          {
+            "from": "api",
+            "to": "py",
+            "label": "GET /api/jobs/id"
+          },
+          {
+            "from": "py",
+            "to": "api",
+            "label": "done + links"
+          },
+          {
+            "from": "api",
+            "to": "ui",
+            "label": "ready, notes.html"
+          }
+        ]
+      },
+      "key_takeaways": [
+        "The UI polls; it never holds a request open for minutes.",
+        "Progress is stage-mapped: transcript 0-25, notes 25-85, render 85-100.",
+        "A cache hit short-circuits everything after step 2."
+      ],
+      "recall": {
+        "q": "Why a job + polling instead of one long HTTP request?",
+        "a": "Notes take seconds to minutes (long lectures need many LLM calls). Proxies and browsers time out long requests; a job returns 202 immediately and exposes stage and percent for a progress bar."
+      },
+      "next": "pg. 7: watch & resume flow"
+    },
+    {
+      "number": 7,
+      "title": "watch & resume flow",
+      "subtitle": "the player remembers where you stopped",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "`player.js` embeds a `youtube-nocookie.com` iframe and loads the YouTube IFrame API once. A 1-second timer reads the **real** playback position and hands it to the store."
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Open a video: `AQ.store.watchInfo(id)` gives pos/dur; start > 0 shows \"Resumed at m:ss\".",
+            "Every second `tick()` calls `S.watchSave(id, {pos, dur})`; storage writes are silent.",
+            "At >= 95% of the duration, or on the ended event, `done` becomes true.",
+            "Replaying a finished video and stopping early flips it back to Resume.",
+            "On dialog close `S.notify()` re-renders cards and rows (bars, labels); `api.js` sends the record to aq-api (debounced 2 s).",
+            "`learnDuration()` fills a missing duration from the real player."
+          ]
+        },
+        {
+          "type": "callout",
+          "style": "note",
+          "text": "Rows get their button text from `watchLabel`: Play, Resume * 12:34, or Replay. The `storage` event keeps other tabs in sync."
+        }
+      ],
+      "diagram": {
+        "type": "flow",
+        "title": "watch state loop",
+        "caption": "from the YouTube iframe to the progress bars",
+        "nodes": [
+          {
+            "id": "yt",
+            "label": "YouTube iframe API",
+            "detail": "currentTime every 1 s"
+          },
+          {
+            "id": "pl",
+            "label": "player.js",
+            "detail": "tick() timer"
+          },
+          {
+            "id": "st",
+            "label": "watchSave()",
+            "detail": "in store.js: pos, dur, done"
+          },
+          {
+            "id": "ls",
+            "label": "aq.watch.v1",
+            "detail": "localStorage, then api.js to Node"
+          },
+          {
+            "id": "ui",
+            "label": "cards + rows",
+            "detail": "bars, Resume label"
+          }
+        ],
+        "edges": [
+          {
+            "from": "yt",
+            "to": "pl"
+          },
+          {
+            "from": "pl",
+            "to": "st"
+          },
+          {
+            "from": "st",
+            "to": "ls",
+            "label": "persist"
+          },
+          {
+            "from": "st",
+            "to": "ui",
+            "label": "notify"
+          }
+        ]
+      },
+      "key_takeaways": [
+        "The position is measured, not guessed: it comes from the player itself.",
+        "done = ended event or >= 95% of duration.",
+        "Memory is the source of truth; a blocked localStorage never breaks playback."
+      ],
+      "recall": {
+        "q": "How does resume work, and what if the YouTube API is blocked?",
+        "a": "A 1 s timer stores {pos, dur} per video id; reopening starts at pos. If the IFrame API cannot load, the plain embed still plays, just without saved progress."
+      },
+      "next": "pg. 8: notes pipeline in Python"
+    },
+    {
+      "number": 8,
+      "title": "notes pipeline in Python",
+      "subtitle": "URL -> transcript -> notes -> notebook",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "`notes_engine.generate(url, provider, ...)` is the whole worker in one call; the Flask server runs the same stages with extra status reporting. Progress is remapped to one global 0-100 bar."
+        },
+        {
+          "type": "table",
+          "headers": [
+            "stage",
+            "module",
+            "output",
+            "pct"
+          ],
+          "rows": [
+            [
+              "ingest",
+              "`ingest.get_transcript`",
+              "title, channel, duration, timed segments",
+              "0-25"
+            ],
+            [
+              "write",
+              "`llm.generate_notes`",
+              "raw JSON from the model",
+              "25-85"
+            ],
+            [
+              "clean",
+              "`notes_schema.validate_notes`",
+              "contract-safe Notes dict",
+              "~97"
+            ],
+            [
+              "draw",
+              "`pdf.render_html / render_pdf`",
+              "notes.html, notes.pdf",
+              "85-100"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "The same engine has three front doors: the Flask web server, the CLI `python -m notes_engine URL` and the library import. Exit codes tell a script what failed: 3 transcript, 4 AI provider, 5 no PDF."
+        }
+      ],
+      "diagram": {
+        "type": "flow",
+        "title": "engine stages",
+        "caption": "each stage can fail with its own user-safe error",
+        "nodes": [
+          {
+            "id": "u",
+            "label": "YouTube URL"
+          },
+          {
+            "id": "i",
+            "label": "ingest",
+            "detail": "transcript"
+          },
+          {
+            "id": "l",
+            "label": "llm",
+            "detail": "writes JSON"
+          },
+          {
+            "id": "v",
+            "label": "validate",
+            "detail": "validate_notes: coerce"
+          },
+          {
+            "id": "r",
+            "label": "pdf",
+            "detail": "HTML then PDF"
+          },
+          {
+            "id": "o",
+            "label": "notes files"
+          }
+        ],
+        "edges": [
+          {
+            "from": "u",
+            "to": "i"
+          },
+          {
+            "from": "i",
+            "to": "l"
+          },
+          {
+            "from": "l",
+            "to": "v"
+          },
+          {
+            "from": "v",
+            "to": "r"
+          },
+          {
+            "from": "r",
+            "to": "o"
+          }
+        ]
+      },
+      "key_takeaways": [
+        "generate() = ingest -> llm -> validate -> render, with one global progress bar.",
+        "IngestError, LLMError and PdfError carry messages that are safe to show users.",
+        "If only the PDF fails, HTML and JSON are still saved and a warning is returned."
+      ],
+      "recall": {
+        "q": "What happens if the PDF step fails but the notes were written?",
+        "a": "The job still finishes as done with a warning: notes.json and notes.html are kept and linked, pdf_path is None. Only when both HTML and PDF fail does the job become an error."
+      },
+      "next": "pg. 9: ingest.py: transcripts"
+    },
+    {
+      "number": 9,
+      "title": "ingest.py: transcripts",
+      "subtitle": "three fallbacks, one clean format",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "`ingest.py` (1,200 lines) turns a link into `{video_id, title, channel, duration_sec, language, source, segments[]}`. It validates the link first, which doubles as the SSRF guard: only 11-char ids from known YouTube hosts get through."
+        },
+        {
+          "type": "steps",
+          "items": [
+            "`parse_video_id` accepts watch, youtu.be, shorts, embed, live; anything else is rejected.",
+            "Metadata: yt-dlp info, falling back to the oEmbed endpoint.",
+            "Try 1: youtube-transcript-api, manual captions before auto, English first.",
+            "Try 2: yt-dlp subtitle download (json3 or vtt).",
+            "Try 3 (only with a Groq key): download audio, ffmpeg 16 kHz mono in 10-minute chunks, Groq Whisper.",
+            "Clean: strip sound cues, dedupe overlapping cues, merge into sentences."
+          ]
+        },
+        {
+          "type": "bullets",
+          "items": [
+            "`chunk_transcript` slices text for the LLM (12,000 chars, 400 overlap) with a `[mm:ss]` marker every 30 s.",
+            "`get_playlist` lists up to 200 videos via yt-dlp, skipping private/deleted ones."
+          ]
+        }
+      ],
+      "diagram": {
+        "type": "flow",
+        "title": "fallback chain",
+        "caption": "stop at the first method that works",
+        "nodes": [
+          {
+            "id": "a",
+            "label": "parse_video_id",
+            "detail": "validate + SSRF guard"
+          },
+          {
+            "id": "b",
+            "label": "captions API",
+            "detail": "manual > auto"
+          },
+          {
+            "id": "c",
+            "label": "yt-dlp subtitles",
+            "detail": "json3 / vtt"
+          },
+          {
+            "id": "d",
+            "label": "Whisper (Groq)",
+            "detail": "audio + ffmpeg"
+          },
+          {
+            "id": "e",
+            "label": "clean + chunk",
+            "detail": "segments, [mm:ss]"
+          }
+        ],
+        "edges": [
+          {
+            "from": "a",
+            "to": "b"
+          },
+          {
+            "from": "b",
+            "to": "c",
+            "label": "fails"
+          },
+          {
+            "from": "c",
+            "to": "d",
+            "label": "fails + key"
+          },
+          {
+            "from": "d",
+            "to": "e"
+          },
+          {
+            "from": "b",
+            "to": "e",
+            "label": "ok"
+          }
+        ]
+      },
+      "key_takeaways": [
+        "Order: captions API, yt-dlp subtitles, then Whisper only if a Groq key exists.",
+        "Private, live and unavailable videos stop the chain early with a clear message.",
+        "Cleaning and 30 s time markers let the LLM stamp sections with timestamps."
+      ],
+      "recall": {
+        "q": "Why validate the URL so strictly before any network call?",
+        "a": "The server fetches whatever it is given, so an unchecked URL could point it at internal addresses (SSRF). Only an 11-char id from allowed YouTube hosts passes, and the player URL is rebuilt from that id."
+      },
+      "next": "pg. 10: llm.py & prompts.py"
+    },
+    {
+      "number": 10,
+      "title": "llm.py & prompts.py",
+      "subtitle": "single pass vs map-reduce",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "`llm.generate_notes` picks a strategy from transcript size and the provider's limits (`_profile`). `prompts.py` holds the rules (knowledge only, faithful, 2-4 takeaways, one recall question per section) and four message builders."
+        },
+        {
+          "type": "table",
+          "headers": [
+            "provider",
+            "default model",
+            "note"
+          ],
+          "rows": [
+            [
+              "gemini",
+              "gemini-2.5-flash",
+              "huge context, 32k output"
+            ],
+            [
+              "groq",
+              "openai/gpt-oss-120b",
+              "free tier ~8k tokens/min, paced client-side"
+            ],
+            [
+              "huggingface",
+              "Llama-3.3-70B-Instruct",
+              "needs Inference Providers token"
+            ],
+            [
+              "xai",
+              "grok-4",
+              "paid API"
+            ]
+          ]
+        },
+        {
+          "type": "bullets",
+          "items": [
+            "Target size: about one section per 2.5 minutes, clamped to 6-18.",
+            "A `_Pacer` keeps the trailing minute under ~85% of the token limit; 429s sleep for Retry-After.",
+            "Up to 5 attempts per call; bad JSON is repaired (`fix_json_messages`) or salvaged if truncated.",
+            "The key only goes in a header and is scrubbed from every error message."
+          ]
+        }
+      ],
+      "diagram": {
+        "type": "compare",
+        "title": "two strategies",
+        "caption": "short lectures get one call, long ones are map-reduced",
+        "nodes": [
+          {
+            "id": "a",
+            "label": "single pass",
+            "detail": "1 call -> whole Notes JSON"
+          },
+          {
+            "id": "b",
+            "label": "map-reduce",
+            "detail": "digest slices, compose, finalize"
+          }
+        ],
+        "edges": []
+      },
+      "key_takeaways": [
+        "Short lecture: one call. Long lecture: digest each slice, compose batches, write cover/glossary/recap.",
+        "Single pass that returns too few sections falls back to map-reduce.",
+        "Rate limits are handled by pacing before sending, not only retrying after 429."
+      ],
+      "recall": {
+        "q": "How do you handle a lecture longer than the model's context or rate limit?",
+        "a": "Map-reduce: chunk the transcript, make a compact digest per chunk, pack digests into batches that each compose 2-10 sections, then one small call writes subtitle, glossary and recap. A pacer and retries keep each call inside the provider's token-per-minute budget."
+      },
+      "next": "pg. 11: notes_schema.py: contract"
+    },
+    {
+      "number": 11,
+      "title": "notes_schema.py: contract",
+      "subtitle": "forgiving in, strict out",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "LLM output is messy, so `validate_notes` **coerces instead of rejecting**. It raises only when no section survives. Its output is the single contract between prompts, renderer and UI (`docs/notes-schema.md`)."
+        },
+        {
+          "type": "bullets",
+          "items": [
+            "Section numbers are always rebuilt as 2, 3, 4... (page 1 is the cover).",
+            "`cover.toc` and every `next` footer are regenerated from the final list, so they cannot drift.",
+            "Facts (title, channel, duration, url, language) come from the transcript, not the model.",
+            "Caps: 24 sections, 14 blocks, 8 diagram nodes (mindmap 10), labels 40 chars, 30 glossary terms.",
+            "Aliases are mapped: `flowchart` -> flow, `mind map` -> mindmap, `children` lists -> `parent` ids."
+          ]
+        },
+        {
+          "type": "callout",
+          "style": "tip",
+          "text": "`validate_notes(validate_notes(x))` is stable: running it twice changes nothing. That is what makes it safe to re-validate stored notes."
+        }
+      ],
+      "diagram": {
+        "type": "mindmap",
+        "title": "the Notes JSON",
+        "caption": "everything the renderer needs",
+        "nodes": [
+          {
+            "id": "r",
+            "label": "Notes JSON"
+          },
+          {
+            "id": "m",
+            "label": "meta",
+            "detail": "title, channel, model",
+            "parent": "r"
+          },
+          {
+            "id": "c",
+            "label": "cover",
+            "detail": "summary, big idea, toc",
+            "parent": "r"
+          },
+          {
+            "id": "s",
+            "label": "sections",
+            "detail": "one per page",
+            "parent": "r"
+          },
+          {
+            "id": "g",
+            "label": "glossary",
+            "detail": "terms",
+            "parent": "r"
+          },
+          {
+            "id": "rc",
+            "label": "recap",
+            "detail": "points + diagram",
+            "parent": "r"
+          },
+          {
+            "id": "b",
+            "label": "blocks",
+            "detail": "9 types",
+            "parent": "s"
+          },
+          {
+            "id": "d",
+            "label": "diagram",
+            "detail": "8 types",
+            "parent": "s"
+          },
+          {
+            "id": "q",
+            "label": "recall",
+            "detail": "interview Q/A",
+            "parent": "s"
+          }
+        ],
+        "edges": []
+      },
+      "key_takeaways": [
+        "validate_notes coerces: it only fails when there is nothing usable.",
+        "Derived fields (toc, next, numbers) are rebuilt, never trusted from the model.",
+        "9 block types and 8 diagram types are the whole vocabulary."
+      ],
+      "recall": {
+        "q": "Why coerce LLM JSON instead of rejecting bad output?",
+        "a": "Retrying costs tokens and time, and models are nearly right most of the time. Clamping lengths, fixing aliases and rebuilding derived fields rescues almost every answer deterministically, with no extra API calls."
+      },
+      "next": "pg. 12: pdf.py: the notebook"
+    },
+    {
+      "number": 12,
+      "title": "pdf.py: the notebook",
+      "subtitle": "Python lays out, the browser paginates",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "`render_html` builds one self-contained page: fonts inlined as base64, SVG diagrams laid out **in Python** (text measured with the bundled fonts via PyMuPDF so labels never overflow), then the browser script paginates and sketches."
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Escape all text (`html.escape`); re-allow only **bold** and `code`.",
+            "Diagram builders (`_svg_flow`, `_svg_stack`, ..., `_svg_sequence`) emit SVG with plain strokes + seeded shape specs.",
+            "`templates/notebook.js` pours units into fixed A4 page boxes, splitting lists, tables and code across pages.",
+            "Vendored `rough.js` redraws the shapes hand-drawn; every page gets rings, footer and `pg. N / M`.",
+            "`render_pdf` runs headless Edge/Chrome `--print-to-pdf` (retry with a longer virtual-time budget).",
+            "`_pdf_ok` reads the PDF back: every page must say `pg. N / M` with M = real page count."
+          ]
+        }
+      ],
+      "diagram": {
+        "type": "flow",
+        "title": "HTML to PDF",
+        "caption": "layout in Python, pagination in the browser",
+        "nodes": [
+          {
+            "id": "n",
+            "label": "Notes dict"
+          },
+          {
+            "id": "h",
+            "label": "render_html",
+            "detail": "SVG layout + fonts"
+          },
+          {
+            "id": "p",
+            "label": "notebook.js",
+            "detail": "paginate + Rough.js"
+          },
+          {
+            "id": "e",
+            "label": "headless Edge",
+            "detail": "--print-to-pdf"
+          },
+          {
+            "id": "c",
+            "label": "_pdf_ok",
+            "detail": "page-number check"
+          },
+          {
+            "id": "f",
+            "label": "notes.pdf"
+          }
+        ],
+        "edges": [
+          {
+            "from": "n",
+            "to": "h"
+          },
+          {
+            "from": "h",
+            "to": "p"
+          },
+          {
+            "from": "p",
+            "to": "e"
+          },
+          {
+            "from": "e",
+            "to": "c"
+          },
+          {
+            "from": "c",
+            "to": "f"
+          }
+        ]
+      },
+      "key_takeaways": [
+        "Text is escaped before any markup is added back: notes cannot inject HTML.",
+        "Diagrams are measured in Python so nothing overflows; Rough.js only adds the wobble.",
+        "A PDF is accepted only when every page's `pg. N / M` matches the page count."
+      ],
+      "recall": {
+        "q": "How do you know the generated PDF is correct?",
+        "a": "After printing, PyMuPDF reads every page's footer; the PDF is accepted only if each page says pg. N / M with M equal to the real page count. Otherwise it retries with more render time, then raises PdfError."
+      },
+      "next": "pg. 13: Flask server: the worker"
+    },
+    {
+      "number": 13,
+      "title": "Flask server: the worker",
+      "subtitle": "jobs in memory, files on disk",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "`backend/app/server.py` (650 lines) is an app factory, `create_app()`. Modules `ingest`, `llm`, `pdf` are imported **lazily inside the worker** so the server still starts if one is broken."
+        },
+        {
+          "type": "table",
+          "headers": [
+            "method + path",
+            "does"
+          ],
+          "rows": [
+            [
+              "GET `/api/providers`",
+              "providers, default models, `server_key` yes/no"
+            ],
+            [
+              "POST `/api/jobs`",
+              "validate {url, provider, api_key?, model?, groq_key?} -> 202 {job_id}"
+            ],
+            [
+              "GET `/api/jobs/<id>`",
+              "status, stage, pct, message, meta, links, warning, error"
+            ],
+            [
+              "GET `/api/jobs/<id>/notes.json|pdf|html`",
+              "the three outputs (html allowed in a local iframe)"
+            ],
+            [
+              "GET `/api/playlist?url=`",
+              "playlist metadata via yt-dlp (max 200 videos)"
+            ]
+          ]
+        },
+        {
+          "type": "bullets",
+          "items": [
+            "`State` holds the jobs dict, a lock, a 10-per-60 s rate bucket, a separate playlist bucket and 2 playlist slots.",
+            "Each job runs in a daemon thread `_run_job`; max 2 active, otherwise 429.",
+            "`cleanup_old_jobs` deletes job folders older than 24 h at startup."
+          ]
+        }
+      ],
+      "diagram": {
+        "type": "tree",
+        "title": "server anatomy",
+        "caption": "request guard, then routes, then a job thread",
+        "nodes": [
+          {
+            "id": "app",
+            "label": "create_app()",
+            "detail": "Flask factory"
+          },
+          {
+            "id": "g",
+            "label": "before_request guard",
+            "detail": "host + origin checks"
+          },
+          {
+            "id": "rt",
+            "label": "routes",
+            "detail": "providers, jobs, playlist"
+          },
+          {
+            "id": "st",
+            "label": "State",
+            "detail": "jobs, lock, rate buckets"
+          },
+          {
+            "id": "w",
+            "label": "_run_job thread",
+            "detail": "ingest, llm, pdf"
+          },
+          {
+            "id": "o",
+            "label": "output/<job_id>/",
+            "detail": "json, html, pdf"
+          }
+        ],
+        "edges": [
+          {
+            "from": "app",
+            "to": "g"
+          },
+          {
+            "from": "app",
+            "to": "rt"
+          },
+          {
+            "from": "app",
+            "to": "st"
+          },
+          {
+            "from": "st",
+            "to": "w"
+          },
+          {
+            "from": "w",
+            "to": "o"
+          }
+        ]
+      },
+      "key_takeaways": [
+        "Lazy imports keep the server alive even with a broken module.",
+        "Concurrency is bounded: 2 active jobs, 10 new jobs per 60 s, 2 playlist fetches.",
+        "Job status is in memory (restart = 404); files on disk last 24 hours."
+      ],
+      "recall": {
+        "q": "Why run jobs in threads with in-memory state instead of a queue?",
+        "a": "It is a single-user local worker, so a thread plus a dict is the simplest thing that works. The cost: a restart loses job ids, which is why Node caches the finished notes record by video_id."
+      },
+      "next": "pg. 14: python files, one line each"
+    },
+    {
+      "number": 14,
+      "title": "python files, one line each",
+      "subtitle": "every file in lecture-notes-ai",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "table",
+          "headers": [
+            "file",
+            "role"
+          ],
+          "rows": [
+            [
+              "`notes_engine/__init__.py`",
+              "`generate()`, `render_notes()`, lazy re-exports, ENV_KEYS"
+            ],
+            [
+              "`notes_engine/__main__.py`",
+              "CLI, progress bar, exit codes 0-5"
+            ],
+            [
+              "`notes_engine/ingest.py`",
+              "link validation, transcripts, playlists, chunking"
+            ],
+            [
+              "`notes_engine/llm.py`",
+              "providers, pacing, single pass / map-reduce"
+            ],
+            [
+              "`notes_engine/prompts.py`",
+              "rules + message builders (digest, compose, final, fix-json)"
+            ],
+            [
+              "`notes_engine/notes_schema.py`",
+              "`validate_notes` coercion + limits"
+            ],
+            [
+              "`notes_engine/pdf.py`",
+              "diagram SVG layout, HTML build, headless PDF"
+            ],
+            [
+              "`templates/notebook.js` / `.css`",
+              "pagination, rings, footer / paper + print styles"
+            ],
+            [
+              "`templates/vendor/rough.js`",
+              "Rough.js sketchy shapes (MIT)"
+            ],
+            [
+              "`static/fonts/*.ttf`",
+              "Kalam, Patrick Hand, Caveat, JetBrains Mono (OFL)"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "headers": [
+            "file",
+            "role"
+          ],
+          "rows": [
+            [
+              "`backend/app/server.py`",
+              "Flask app factory, jobs, guards"
+            ],
+            [
+              "`backend/run.py`",
+              "starts Flask on 127.0.0.1:`LNA_PORT` (5055)"
+            ],
+            [
+              "`backend/.env.example`",
+              "template for provider keys"
+            ],
+            [
+              "`frontend/*`",
+              "old standalone page (form, stepper, preview)"
+            ],
+            [
+              "`start.ps1` / `pyproject.toml`",
+              "one-click launcher / package + extras"
+            ],
+            [
+              "`tests/`, `docs/`",
+              "pytest suites + fixtures / notes-schema.md"
+            ]
+          ]
+        }
+      ],
+      "diagram": null,
+      "key_takeaways": [
+        "notes_engine has no web code; the Flask server is a thin shell around it.",
+        "The CLI, the library and the server all call the same generate stages.",
+        "Fonts, templates and Rough.js ship inside the package, so PDFs are reproducible."
+      ],
+      "recall": {
+        "q": "Where would you add a fifth LLM provider?",
+        "a": "In `llm.PROVIDERS` (label, default model, key hint) and `_ENDPOINTS`, a size profile in `_BASE_PROFILES`, and the env var in `ENV_KEYS`; the server and UI read the provider table, so they pick it up automatically."
+      },
+      "next": "pg. 15: UI core files"
+    },
+    {
+      "number": 15,
+      "title": "UI core files",
+      "subtitle": "shell, data, helpers, screens",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "No bundler: `index.html` loads plain scripts in dependency order, and every file is an IIFE that hangs its API on one global, `window.AQ`."
+        },
+        {
+          "type": "table",
+          "headers": [
+            "file",
+            "role",
+            "talks to"
+          ],
+          "rows": [
+            [
+              "`index.html`",
+              "shell: top bar, `#view`, modal, script order",
+              "loads all .js"
+            ],
+            [
+              "`styles.css`",
+              "tokens + all components, black glass theme",
+              "-"
+            ],
+            [
+              "`util.js`",
+              "`el()`, icons, YouTube id parser, durations",
+              "used by all"
+            ],
+            [
+              "`store.js`",
+              "playlist CRUD, sanitising, watch progress, limits",
+              "localStorage, `api.js`"
+            ],
+            [
+              "`api.js`",
+              "sync adapter: probes aq-api, imports once, writes through, dirty flag",
+              "aq-api, store"
+            ],
+            [
+              "`dialog.js`",
+              "accessible modal: focus trap, Esc, restore focus",
+              "`#modal`"
+            ],
+            [
+              "`app.js`",
+              "hash router, home grid, chroma cards, detail, drag-and-drop",
+              "store, dialog, split"
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "style": "note",
+          "text": "Safety rule across the UI: user text is only set with `textContent`; there is no `innerHTML` anywhere."
+        }
+      ],
+      "diagram": {
+        "type": "stack",
+        "title": "script load order",
+        "caption": "later files depend on earlier ones",
+        "nodes": [
+          {
+            "id": "a",
+            "label": "util.js",
+            "detail": "AQ.util helpers"
+          },
+          {
+            "id": "b",
+            "label": "store.js + api.js",
+            "detail": "data layer + sync adapter"
+          },
+          {
+            "id": "c",
+            "label": "dialog.js",
+            "detail": "modal host"
+          },
+          {
+            "id": "d",
+            "label": "feature modules",
+            "detail": "notes, player, split, import"
+          },
+          {
+            "id": "e",
+            "label": "app.js",
+            "detail": "router + render, runs last"
+          }
+        ],
+        "edges": []
+      },
+      "key_takeaways": [
+        "One global namespace (AQ) and ordered script tags replace a bundler.",
+        "store.js has no DOM code; app.js renders from store and re-renders on notify().",
+        "Routes: `#/` home, `#/playlist/<id>`, `#/playlist/<id>/notes/<videoId>`."
+      ],
+      "recall": {
+        "q": "How is the UI organised without a framework or build step?",
+        "a": "Small IIFE modules sharing one `window.AQ` namespace, loaded in order. `store.js` owns data and emits change events, `app.js` listens, re-renders the active hash route and writes the DOM only through textContent."
+      },
+      "next": "pg. 16: UI feature modules"
+    },
+    {
+      "number": 16,
+      "title": "UI feature modules",
+      "subtitle": "player, notes, import, effects",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "table",
+          "headers": [
+            "file",
+            "role",
+            "talks to"
+          ],
+          "rows": [
+            [
+              "`player.js`",
+              "youtube-nocookie embed, prev/next, saves position every 1 s",
+              "YouTube IFrame API, store"
+            ],
+            [
+              "`notes.js`",
+              "`AQ.notesJobs`: start/poll/retry/urls, max 2 running, resumes after reload",
+              "aq-api `/notes`, else :5055; `aq.notes.v1`"
+            ],
+            [
+              "`notebutton.js`",
+              "Get notes button: none, running %, ready, retry",
+              "notesJobs"
+            ],
+            [
+              "`notesview.js`",
+              "notes panel: iframe of notes.html, Download PDF",
+              "notesJobs, notebutton"
+            ],
+            [
+              "`split.js`",
+              "slide-in notes panel, list shrinks to nav (FLIP animation)",
+              "notesView, history"
+            ],
+            [
+              "`importpl.js`",
+              "import dialog: fetch playlist, preview, create local copy",
+              "aq-api `/import/youtube`, store"
+            ],
+            [
+              "`water.js`",
+              "liquid-glass New playlist button (SVG refraction)",
+              "-"
+            ],
+            [
+              "`clickspark.js`",
+              "click spark canvas effect",
+              "-"
+            ]
+          ]
+        }
+      ],
+      "diagram": {
+        "type": "mindmap",
+        "title": "window.AQ namespace",
+        "caption": "who exposes what",
+        "nodes": [
+          {
+            "id": "r",
+            "label": "window.AQ"
+          },
+          {
+            "id": "u",
+            "label": "util",
+            "detail": "el, icon, parse",
+            "parent": "r"
+          },
+          {
+            "id": "s",
+            "label": "store",
+            "detail": "CRUD + watch",
+            "parent": "r"
+          },
+          {
+            "id": "d",
+            "label": "dialog",
+            "detail": "open, confirm",
+            "parent": "r"
+          },
+          {
+            "id": "nj",
+            "label": "notesJobs",
+            "detail": "start, status, urls",
+            "parent": "r"
+          },
+          {
+            "id": "nb",
+            "label": "noteButton",
+            "detail": "progressive button",
+            "parent": "r"
+          },
+          {
+            "id": "nv",
+            "label": "notesView",
+            "detail": "iframe panel",
+            "parent": "r"
+          },
+          {
+            "id": "sp",
+            "label": "split",
+            "detail": "open, close, owns",
+            "parent": "r"
+          },
+          {
+            "id": "p",
+            "label": "player",
+            "detail": "open queue",
+            "parent": "r"
+          }
+        ],
+        "edges": []
+      },
+      "key_takeaways": [
+        "notesJobs is the shared brain: rows, player and button all read it.",
+        "split.js keeps the SAME list node across states, so morphing is a cheap FLIP animation.",
+        "All motion respects prefers-reduced-motion."
+      ],
+      "recall": {
+        "q": "Why does notes.js keep job ids in localStorage?",
+        "a": "Server job ids are in memory and the page may reload mid-generation. Storing {videoId: {jobId, state}} lets queued or running jobs resume polling, and a 404 from the server turns into \"Notes expired, generate again\"."
+      },
+      "next": "pg. 17: api.js: the sync adapter"
+    },
+    {
+      "number": 17,
+      "title": "api.js: the sync adapter",
+      "subtitle": "local first, server as source of truth",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "`store.js` stays **synchronous** and keeps `localStorage` as the offline cache. `api.js` (loaded right after it) mirrors everything to aq-api, so the UI never waits on the network and still works if the server is down."
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Boot: probe `GET /api/v1/health` on the same origin, then on `http://127.0.0.1:5180`.",
+            "`reconcile()`: `GET /me`. If not `bootstrapped` (or the dirty flag is set) push local data with `POST /sync/import`; otherwise pull playlists + progress.",
+            "`store.applyRemote()` adopts the server's data (a newer local watch record still wins) and re-renders.",
+            "Every store change calls `AQ.api.record(name, args)`; writes are queued **in order** (create, PATCH, DELETE, PUT order...).",
+            "Watch progress is debounced: one `PUT /progress/<videoId>` per video every 2 s, flushed on tab hide / `pagehide`.",
+            "Server unreachable: `aq.dirty.v1 = 1`; on `online` or tab focus the whole local state is pushed again."
+          ]
+        },
+        {
+          "type": "callout",
+          "style": "note",
+          "text": "Last writer wins by the `updated` timestamp: the server ignores an older progress write than the one it holds."
+        }
+      ],
+      "diagram": {
+        "type": "sequence",
+        "title": "sync on start",
+        "caption": "probe, reconcile, then write-through",
+        "nodes": [
+          {
+            "id": "st",
+            "label": "store.js"
+          },
+          {
+            "id": "ap",
+            "label": "api.js"
+          },
+          {
+            "id": "sv",
+            "label": "aq-api"
+          },
+          {
+            "id": "db",
+            "label": "SQLite"
+          }
+        ],
+        "edges": [
+          {
+            "from": "ap",
+            "to": "sv",
+            "label": "GET /health"
+          },
+          {
+            "from": "ap",
+            "to": "sv",
+            "label": "GET /me"
+          },
+          {
+            "from": "sv",
+            "to": "db",
+            "label": "read bootstrapped"
+          },
+          {
+            "from": "ap",
+            "to": "sv",
+            "label": "POST /sync/import"
+          },
+          {
+            "from": "sv",
+            "to": "ap",
+            "label": "full state"
+          },
+          {
+            "from": "ap",
+            "to": "st",
+            "label": "applyRemote()"
+          },
+          {
+            "from": "st",
+            "to": "ap",
+            "label": "record(change)"
+          },
+          {
+            "from": "ap",
+            "to": "sv",
+            "label": "PATCH / PUT ..."
+          }
+        ]
+      },
+      "key_takeaways": [
+        "localStorage is the cache, aq-api is the source of truth; the UI code stays synchronous.",
+        "Writes go through in order; progress is debounced to one PUT per video per 2 s.",
+        "A dirty flag guarantees offline edits are pushed later, never lost."
+      ],
+      "recall": {
+        "q": "What happens to edits you make while the server is down?",
+        "a": "They are saved to localStorage immediately and `aq.dirty.v1` is set. When the page regains focus or the browser goes online, api.js reconnects and pushes the whole local state with POST /sync/import in replace mode, then clears the flag."
+      },
+      "next": "pg. 18: aq-api: the Node backend"
+    },
+    {
+      "number": 18,
+      "title": "aq-api: the Node backend",
+      "subtitle": "state, identity and the front door",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "`aq-api` owns users, playlists, videos, watch progress and one notes record per video_id. It proxies the two slow things (notes, YouTube import) to Python and serves the UI on :5180. One dependency: `express`."
+        },
+        {
+          "type": "table",
+          "headers": [
+            "file",
+            "role"
+          ],
+          "rows": [
+            [
+              "`src/server.js`, `config.js`",
+              "entry + env config (port, DB, Python URL, limits)"
+            ],
+            [
+              "`src/app.js`",
+              "`createApp`: middleware order, routers, static UI, JSON errors"
+            ],
+            [
+              "`src/db.js`, `repo.js`",
+              "node:sqlite + migrations; all SQL scoped by userId"
+            ],
+            [
+              "`src/notes-service.js`",
+              "notes records + cache by video_id"
+            ],
+            [
+              "`src/pyclient.js`",
+              "fixed-path client for the Python worker"
+            ],
+            [
+              "`middleware/auth.js`, `security.js`",
+              "auth seam (local user today); headers, host guard, CORS, rate limit"
+            ],
+            [
+              "`routes/*.js`, `sql/001_init.sql`",
+              "playlists, progress, notes, misc; 6 tables"
+            ]
+          ]
+        },
+        {
+          "type": "bullets",
+          "items": [
+            "Routes live under `/api/v1/...`: playlists, progress, notes, import/youtube, sync/import, health, me.",
+            "`authenticate` sets `req.user` before every data route; swap it for OAuth via `createApp(config, {authenticate})`.",
+            "Node >= 24: SQLite is the built-in `node:sqlite`, no native module to compile."
+          ]
+        }
+      ],
+      "diagram": {
+        "type": "flow",
+        "title": "a request inside aq-api",
+        "caption": "guards first, then auth, then the route",
+        "nodes": [
+          {
+            "id": "g",
+            "label": "headers + host + CORS",
+            "detail": "local only"
+          },
+          {
+            "id": "l",
+            "label": "rate limit",
+            "detail": "600/min, heavy 20/min"
+          },
+          {
+            "id": "a",
+            "label": "authenticate",
+            "detail": "req.user"
+          },
+          {
+            "id": "r",
+            "label": "routes",
+            "detail": "validate input"
+          },
+          {
+            "id": "db",
+            "label": "repo + SQLite",
+            "detail": "scoped by user"
+          },
+          {
+            "id": "py",
+            "label": "pyclient",
+            "detail": "notes, import"
+          }
+        ],
+        "edges": [
+          {
+            "from": "g",
+            "to": "l"
+          },
+          {
+            "from": "l",
+            "to": "a"
+          },
+          {
+            "from": "a",
+            "to": "r"
+          },
+          {
+            "from": "r",
+            "to": "db"
+          },
+          {
+            "from": "r",
+            "to": "py"
+          }
+        ]
+      },
+      "key_takeaways": [
+        "Node owns state and identity; Python stays stateless.",
+        "Auth is a middleware seam: replace localAuth with an OAuth verifier, nothing else changes.",
+        "The notes_jobs table is the cache: one generation serves every user and playlist."
+      ],
+      "recall": {
+        "q": "Why add a Node backend instead of extending the Python server?",
+        "a": "Python is a heavy, slow-job worker with in-memory jobs. Users, playlists and progress need a durable DB and an auth seam, which Express + SQLite does simply, and Node gives one front door that proxies the AI work."
+      },
+      "next": "pg. 19: playlist import flow"
+    },
+    {
+      "number": 19,
+      "title": "playlist import flow",
+      "subtitle": "paste a link, get a local copy",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "`importpl.js` extracts the `list=` id (10-64 chars) and asks aq-api: `GET /api/v1/import/youtube?url=`.",
+            "Node re-checks the id and forwards only a canonical playlist URL; Python validates again, then yt-dlp lists entries.",
+            "Server returns {id, title, channel, count, videos[], truncated, skipped}; private/deleted videos are skipped.",
+            "`cleanResponse` re-validates every field; the dialog previews title, count, total time, thumbnails.",
+            "`uniqueName` suggests \"Title (2)\" when the name is taken.",
+            "`store.createWithVideos(name, desc, videos, source)` writes once, with `source: {type: youtube, listId, url, importedAt}`."
+          ]
+        },
+        {
+          "type": "callout",
+          "style": "note",
+          "text": "Nothing syncs back to YouTube. The imported playlist is a copy; you can still add your own videos."
+        }
+      ],
+      "diagram": {
+        "type": "sequence",
+        "title": "import",
+        "caption": "link in, playlist out",
+        "nodes": [
+          {
+            "id": "ui",
+            "label": "importpl.js"
+          },
+          {
+            "id": "api",
+            "label": "aq-api"
+          },
+          {
+            "id": "py",
+            "label": "Python worker"
+          },
+          {
+            "id": "yt",
+            "label": "YouTube"
+          }
+        ],
+        "edges": [
+          {
+            "from": "ui",
+            "to": "api",
+            "label": "GET /import/youtube?url"
+          },
+          {
+            "from": "api",
+            "to": "py",
+            "label": "GET /api/playlist"
+          },
+          {
+            "from": "py",
+            "to": "yt",
+            "label": "yt-dlp flat list"
+          },
+          {
+            "from": "yt",
+            "to": "py",
+            "label": "entries"
+          },
+          {
+            "from": "py",
+            "to": "api",
+            "label": "videos, truncated"
+          },
+          {
+            "from": "api",
+            "to": "ui",
+            "label": "preview JSON"
+          },
+          {
+            "from": "ui",
+            "to": "ui",
+            "label": "createWithVideos"
+          }
+        ]
+      },
+      "key_takeaways": [
+        "Validation happens twice: in the browser for UX, in Python for safety.",
+        "Limits: 200 videos per import, 2 playlist fetches at once, own rate bucket.",
+        "The response is treated as untrusted and re-sanitised by cleanResponse."
+      ],
+      "recall": {
+        "q": "Why re-validate the playlist response in the UI when the server already did?",
+        "a": "Defence in depth: the UI never trusts network data. cleanResponse drops bad ids, trims long text and caps the list, so a compromised or buggy server cannot inject markup or oversized data."
+      },
+      "next": "pg. 20: progress calculation"
+    },
+    {
+      "number": 20,
+      "title": "progress calculation",
+      "subtitle": "time-based, not count-based",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Progress is **watched seconds divided by total seconds**, so one 3-hour lecture weighs more than ten 2-minute clips. It is computed on the fly by `sumVideos` in `store.js`; nothing stores a percentage."
+        },
+        {
+          "type": "formula",
+          "text": "pct = round(100 * watchedSec / totalSec) (done video counts its full duration)"
+        },
+        {
+          "type": "bullets",
+          "items": [
+            "Each unique video is counted once, even if it sits in several playlists.",
+            "Per video: `watchInfo` -> state new / partial / done; done = ended or >= 95%.",
+            "Cap rules: never 100% while seconds are missing; never 0% once something was watched.",
+            "No known durations at all: fall back to finished videos / total videos.",
+            "`progressTime` renders \"14 of 36 min\" or \"1 hr 2 min of 4 hr 30 min+\" (+ means some durations unknown)."
+          ]
+        },
+        {
+          "type": "example",
+          "title": "worked example",
+          "text": "Playlist of 3 videos: 10:00 (done), 20:00 (watched 5:00), 30:00 (new). watched = 600 + 300 = 900 s, total = 3600 s, pct = 25%, done = 1 of 3."
+        }
+      ],
+      "diagram": {
+        "type": "flow",
+        "title": "progress pipeline",
+        "caption": "from player seconds to the bar on a card",
+        "nodes": [
+          {
+            "id": "a",
+            "label": "watch {pos,dur,done}",
+            "detail": "per video id"
+          },
+          {
+            "id": "b",
+            "label": "watchInfo",
+            "detail": "state + pct"
+          },
+          {
+            "id": "c",
+            "label": "sumVideos",
+            "detail": "sum seconds, dedupe"
+          },
+          {
+            "id": "d",
+            "label": "progress(p)",
+            "detail": "pct, done, total"
+          },
+          {
+            "id": "e",
+            "label": "card + detail bar",
+            "detail": "x of N watched"
+          }
+        ],
+        "edges": [
+          {
+            "from": "a",
+            "to": "b"
+          },
+          {
+            "from": "b",
+            "to": "c"
+          },
+          {
+            "from": "c",
+            "to": "d"
+          },
+          {
+            "from": "d",
+            "to": "e"
+          }
+        ]
+      },
+      "key_takeaways": [
+        "Percent is derived each time from seconds; it is never stored.",
+        "Duplicates across playlists are counted once, in `overall()` too.",
+        "Edge rules prevent a misleading 0% or 100%."
+      ],
+      "recall": {
+        "q": "Why weight progress by time instead of counting finished videos?",
+        "a": "Videos differ wildly in length; counting them makes a 2-minute clip equal to a 3-hour lecture. Seconds watched over total seconds matches what the user feels, with a video-count fallback when durations are unknown."
+      },
+      "next": "pg. 21: security"
+    },
+    {
+      "number": 21,
+      "title": "security",
+      "subtitle": "defence in layers",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "table",
+          "headers": [
+            "layer",
+            "control"
+          ],
+          "rows": [
+            [
+              "Network",
+              "Python and Node both bind 127.0.0.1 only; never 0.0.0.0"
+            ],
+            [
+              "Host / origin",
+              "DNS-rebinding guard: only localhost names; POST and `/api/playlist` need a local Origin"
+            ],
+            [
+              "CORS",
+              "only localhost / 127.0.0.1 origins, GET/POST, `Content-Type` header"
+            ],
+            [
+              "Input",
+              "key regex, model regex, 2048-char URL cap, 64 KB body cap, 11-char video ids"
+            ],
+            [
+              "Secrets",
+              "API keys live in memory for one job; `_redact` scrubs logs and errors; never returned by the API"
+            ],
+            [
+              "Headers",
+              "CSP per route, nosniff, frame options, no-referrer, same-origin resource policy"
+            ],
+            [
+              "Notes preview",
+              "notes.html allowed only its own inline scripts by SHA-256 hash; framed only by local pages"
+            ],
+            [
+              "UI",
+              "textContent only (no innerHTML); player embed from validated ids on youtube-nocookie.com"
+            ],
+            [
+              "Files + SQL",
+              "job id = 32 hex chars, path stays inside `output/`; all SQL parameterised and scoped by user_id"
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "style": "warning",
+          "text": "Known gap: login is not built yet. aq-api runs everything as the built-in local user (id 1); its `authenticate` seam is where OAuth goes. A key saved with Remember is plain text in localStorage."
+        }
+      ],
+      "diagram": {
+        "type": "stack",
+        "title": "layers a request crosses",
+        "caption": "outermost first",
+        "nodes": [
+          {
+            "id": "a",
+            "label": "bind to localhost",
+            "detail": "no outside access"
+          },
+          {
+            "id": "b",
+            "label": "host + origin guard",
+            "detail": "rebinding, CSRF"
+          },
+          {
+            "id": "c",
+            "label": "input validation",
+            "detail": "regex + size caps"
+          },
+          {
+            "id": "d",
+            "label": "rate + concurrency limits",
+            "detail": "429 when busy"
+          },
+          {
+            "id": "e",
+            "label": "safe output",
+            "detail": "CSP, redaction, path checks"
+          }
+        ],
+        "edges": []
+      },
+      "key_takeaways": [
+        "Local-only by default: bind, host check, origin check.",
+        "Never trust input (regex, caps) and never echo secrets (redaction).",
+        "Generated HTML is sandboxed by a hash-based CSP and framing rules."
+      ],
+      "recall": {
+        "q": "How do you stop a malicious web page from using your local notes server?",
+        "a": "The server answers only localhost Host headers (blocks DNS rebinding) and rejects any POST or playlist request whose Origin is not a local page. CORS allows the same set only, so another site's browser requests are refused."
+      },
+      "next": "pg. 22: run & deploy"
+    },
+    {
+      "number": 22,
+      "title": "run & deploy",
+      "subtitle": "three commands, three ports",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "table",
+          "headers": [
+            "service",
+            "start",
+            "port"
+          ],
+          "rows": [
+            [
+              "Python worker",
+              "`lecture-notes-ai\\start.ps1`",
+              "5055"
+            ],
+            [
+              "Node API + UI",
+              "`cd aq-api; npm start`",
+              "5180"
+            ],
+            [
+              "UI alone (old way)",
+              "`lecture-notes-ui\\serve.ps1`",
+              "5173"
+            ]
+          ]
+        },
+        {
+          "type": "steps",
+          "items": [
+            "`start.ps1` creates `.venv`, installs `.[web]` only when pyproject.toml changed, opens the browser.",
+            "Copy `backend\\.env.example` to `backend\\.env` and add a Groq or Gemini key (or paste one in the UI).",
+            "`npm start` in aq-api opens `data/aq.db`, applies `sql/` migrations and serves the UI (`PORT`, `DB_FILE`, `PY_NOTES_URL` override defaults).",
+            "Open http://127.0.0.1:5180/ - never double-click index.html (a file:// page sends `Origin: null`, which is rejected)."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "# terminal 1 - AI worker\npowershell -ExecutionPolicy Bypass -File D:\\AQspace\\lecture-notes-ai\\start.ps1\n# terminal 2 - app backend + UI\ncd D:\\AQspace\\aq-api ; npm start"
+        },
+        {
+          "type": "callout",
+          "style": "tip",
+          "text": "Config: `LNA_PORT` changes the worker port; `LNAI_BROWSER` picks Edge/Chrome; `FFMPEG_PATH` points to ffmpeg for Whisper."
+        }
+      ],
+      "diagram": {
+        "type": "flow",
+        "title": "boot sequence",
+        "caption": "worker first, then the API that depends on it",
+        "nodes": [
+          {
+            "id": "a",
+            "label": "start.ps1",
+            "detail": "venv + pip + .env"
+          },
+          {
+            "id": "b",
+            "label": "Flask :5055",
+            "detail": "worker up"
+          },
+          {
+            "id": "c",
+            "label": "npm start",
+            "detail": "aq-api"
+          },
+          {
+            "id": "d",
+            "label": "SQLite ready",
+            "detail": "migrations run"
+          },
+          {
+            "id": "e",
+            "label": "open :5180",
+            "detail": "UI in the browser"
+          }
+        ],
+        "edges": [
+          {
+            "from": "a",
+            "to": "b"
+          },
+          {
+            "from": "b",
+            "to": "c"
+          },
+          {
+            "from": "c",
+            "to": "d"
+          },
+          {
+            "from": "d",
+            "to": "e"
+          }
+        ]
+      },
+      "key_takeaways": [
+        "Two processes to run: the Python worker (:5055) and aq-api (:5180).",
+        "Everything binds to 127.0.0.1; this is a local app, not yet a hosted deployment.",
+        "Edge or Chrome must be installed to get PDFs; ffmpeg only for caption-less videos."
+      ],
+      "recall": {
+        "q": "What would you change to deploy this beyond a laptop?",
+        "a": "Put aq-api behind a reverse proxy with HTTPS and real OAuth, move SQLite to a managed DB if multi-instance, run the Python worker with a production WSGI server and a real queue, and keep the worker on a private network."
+      },
+      "next": "pg. 23: tests & quality"
+    },
+    {
+      "number": 23,
+      "title": "tests & quality",
+      "subtitle": "everything mocked, nothing live",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "table",
+          "headers": [
+            "suite",
+            "covers",
+            "cases"
+          ],
+          "rows": [
+            [
+              "`tests/test_ingest.py`",
+              "URL parsing, caption cleaning, fallback chain, Whisper chunks",
+              "44"
+            ],
+            [
+              "`tests/test_llm.py`",
+              "JSON repair, retries, pacing, map-reduce, validation",
+              "79"
+            ],
+            [
+              "`tests/test_pdf.py`",
+              "HTML rendering, diagrams, page-number check",
+              "17"
+            ],
+            [
+              "`tests/test_playlist.py`",
+              "playlist id parsing, entry cleaning, limits",
+              "24"
+            ],
+            [
+              "`tests/test_api.py`",
+              "Flask routes, guards, jobs, headers",
+              "21"
+            ],
+            [
+              "`tests/sample_*.json`",
+              "fixture notes and raw LLM output",
+              "-"
+            ],
+            [
+              "`aq-api/test/*.test.js`",
+              "playlists, progress, notes, security (node --test, in-memory DB)",
+              "32"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Run `python -m pytest` from `lecture-notes-ai` (`pip install -e \".[web,dev]\"`). `LNA_OFFLINE=1` skips the one live-network test. aq-api: `npm test` (`node --test`, in-memory SQLite, fake Python via injected `fetchImpl`)."
+        },
+        {
+          "type": "callout",
+          "style": "tip",
+          "text": "Because all provider and YouTube calls are mocked, the suite is fast and free, so it can run on every change."
+        }
+      ],
+      "diagram": {
+        "type": "tree",
+        "title": "test pyramid",
+        "caption": "unit tests per engine module, one API suite on top",
+        "nodes": [
+          {
+            "id": "t",
+            "label": "pytest (185 cases)"
+          },
+          {
+            "id": "a",
+            "label": "test_ingest",
+            "detail": "44"
+          },
+          {
+            "id": "b",
+            "label": "test_llm",
+            "detail": "79"
+          },
+          {
+            "id": "c",
+            "label": "test_pdf",
+            "detail": "17"
+          },
+          {
+            "id": "d",
+            "label": "test_playlist",
+            "detail": "24"
+          },
+          {
+            "id": "e",
+            "label": "test_api",
+            "detail": "21"
+          }
+        ],
+        "edges": [
+          {
+            "from": "t",
+            "to": "a"
+          },
+          {
+            "from": "t",
+            "to": "b"
+          },
+          {
+            "from": "t",
+            "to": "c"
+          },
+          {
+            "from": "t",
+            "to": "d"
+          },
+          {
+            "from": "t",
+            "to": "e"
+          }
+        ]
+      },
+      "key_takeaways": [
+        "About 185 Python cases plus 32 aq-api tests; no network or API keys needed.",
+        "The server's `load_modules` is monkeypatchable, which is how test_api isolates the engine.",
+        "One optional live test is behind LNA_OFFLINE."
+      ],
+      "recall": {
+        "q": "How do you test code that calls YouTube and paid LLMs?",
+        "a": "Mock the boundaries: HTTP responses for providers and fake transcripts for ingest, with fixtures like sample_llm_output.json. Tests then assert parsing, retries, validation and rendering without network or keys."
+      },
+      "next": "pg. 24: limits & future scope"
+    },
+    {
+      "number": 24,
+      "title": "limits & future scope",
+      "subtitle": "what is missing, in order",
+      "timestamp": "",
+      "blocks": [
+        {
+          "type": "bullets",
+          "items": [
+            "**Limits today**: YouTube only; private, age-restricted and live videos fail; caption-less videos need a Groq key + ffmpeg; PDFs need Edge/Chrome; very long lectures take minutes and hit free-tier rate limits.",
+            "**Auth**: no login yet. Add OAuth in aq-api's middleware; make every playlist/progress row user-scoped.",
+            "**Sync**: today write-through with a dirty flag and last-writer-wins progress; next is per-user data and smarter multi-device conflict handling.",
+            "**Queue**: replace threads + memory jobs with a persistent queue so restarts keep jobs.",
+            "**Deploy**: HTTPS, reverse proxy, production WSGI server, hosted DB.",
+            "**Product**: notes search, per-video notes tab in the player, spaced-repetition from recall questions, more sources than YouTube."
+          ]
+        },
+        {
+          "type": "callout",
+          "style": "note",
+          "text": "Everything on this list fits the existing seams: the auth middleware, the notes cache by video_id and the stateless worker."
+        }
+      ],
+      "diagram": {
+        "type": "timeline",
+        "title": "roadmap",
+        "caption": "earliest to latest",
+        "nodes": [
+          {
+            "id": "a",
+            "label": "now",
+            "detail": "UI + Node API + worker"
+          },
+          {
+            "id": "b",
+            "label": "next",
+            "detail": "OAuth + user-scoped rows"
+          },
+          {
+            "id": "c",
+            "label": "then",
+            "detail": "multi-device conflicts"
+          },
+          {
+            "id": "d",
+            "label": "later",
+            "detail": "job queue + hosted deploy"
+          },
+          {
+            "id": "e",
+            "label": "dream",
+            "detail": "search + spaced repetition"
+          }
+        ],
+        "edges": []
+      },
+      "key_takeaways": [
+        "The seams (auth middleware, video_id cache, stateless worker) are already in place.",
+        "Order matters: auth before multi-device, queue before hosting.",
+        "Biggest user-visible wins: login, notes search, revision from recall questions."
+      ],
+      "recall": {
+        "q": "If you had one more sprint, what would you build first?",
+        "a": "Authentication in aq-api, because every other feature (per-user playlists, multi-device progress, hosted deploy) needs real user identity first, and the middleware seam already exists."
+      },
+      "next": "pg. 25: glossary, then the recap"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "aq-api",
+      "definition": "The Node/Express + SQLite application backend: users, playlists, progress, notes records; serves the UI on :5180."
+    },
+    {
+      "term": "worker",
+      "definition": "The Python Flask service on :5055 that makes transcripts, notes and PDFs; stateless about users."
+    },
+    {
+      "term": "notes_engine",
+      "definition": "The pip-installable Python package behind the CLI, the library and the web server."
+    },
+    {
+      "term": "job",
+      "definition": "One notes generation run in the worker, tracked in memory with stage and percent."
+    },
+    {
+      "term": "Notes JSON",
+      "definition": "The validated structure (meta, cover, sections, glossary, recap) that the renderer draws."
+    },
+    {
+      "term": "transcript",
+      "definition": "Cleaned, timed caption segments of a video, the only input the LLM sees."
+    },
+    {
+      "term": "map-reduce",
+      "definition": "Long-lecture strategy: digest each slice, compose sections in batches, then write cover and recap."
+    },
+    {
+      "term": "Whisper",
+      "definition": "Speech-to-text (Groq whisper-large-v3-turbo) used only when a video has no captions."
+    },
+    {
+      "term": "SSRF",
+      "definition": "Server-side request forgery: tricking the server into fetching internal URLs; blocked by strict video-id parsing."
+    },
+    {
+      "term": "CSP",
+      "definition": "Content-Security-Policy header deciding which scripts, frames and styles a page may use."
+    },
+    {
+      "term": "DNS rebinding",
+      "definition": "Attack making a web page reach localhost services; stopped by only answering local Host names."
+    },
+    {
+      "term": "FLIP",
+      "definition": "First-Last-Invert-Play animation technique used by split.js to morph the list into a nav."
+    },
+    {
+      "term": "IIFE",
+      "definition": "Immediately-invoked function expression; each UI file wraps itself in one and exports onto window.AQ."
+    },
+    {
+      "term": "chroma card",
+      "definition": "Playlist card: greyscale cover that reveals colour under a pointer spotlight."
+    },
+    {
+      "term": "watch state",
+      "definition": "Per-video {pos, dur, done, updated} stored under aq.watch.v1."
+    },
+    {
+      "term": "resume",
+      "definition": "Reopening a video at its saved position; button label becomes Resume m:ss."
+    },
+    {
+      "term": "video_id",
+      "definition": "The 11-character YouTube id; primary key for notes cache and watch progress."
+    },
+    {
+      "term": "OAuth",
+      "definition": "Planned login method; will plug into aq-api's auth middleware."
+    },
+    {
+      "term": "pacer",
+      "definition": "Client-side throttle that keeps LLM calls under the provider's tokens-per-minute limit."
+    },
+    {
+      "term": "recall question",
+      "definition": "The yellow Q/A box ending each notebook page, written as an interview question."
+    }
+  ],
+  "recap": {
+    "title": "the whole picture, recapped",
+    "points": [
+      "UI (vanilla JS) shows playlists, plays videos, tracks progress; it talks to one door, aq-api on :5180.",
+      "aq-api (Node, Express, SQLite) owns users, playlists, progress and the notes cache by video_id.",
+      "The Python worker (:5055) turns a video id into notes: ingest -> llm -> validate -> pdf.",
+      "Notes generation is a job: start, poll stage/percent, then view notes.html or download the PDF.",
+      "Progress is time-based: watched seconds over total seconds, derived on the fly.",
+      "Security is layered: localhost bind, host/origin guard, input caps, redaction, CSP.",
+      "Seams for the future: auth middleware, notes cache, stateless worker."
+    ],
+    "diagram": {
+      "type": "flow",
+      "title": "end to end",
+      "caption": "one lecture, from click to notebook",
+      "nodes": [
+        {
+          "id": "a",
+          "label": "paste link"
+        },
+        {
+          "id": "b",
+          "label": "playlist in aq-api"
+        },
+        {
+          "id": "c",
+          "label": "watch + progress"
+        },
+        {
+          "id": "d",
+          "label": "Get notes"
+        },
+        {
+          "id": "e",
+          "label": "Python job"
+        },
+        {
+          "id": "f",
+          "label": "notes.html + PDF"
+        }
+      ],
+      "edges": [
+        {
+          "from": "a",
+          "to": "b"
+        },
+        {
+          "from": "b",
+          "to": "c"
+        },
+        {
+          "from": "b",
+          "to": "d"
+        },
+        {
+          "from": "d",
+          "to": "e"
+        },
+        {
+          "from": "e",
+          "to": "f"
+        }
+      ]
+    }
+  }
+}

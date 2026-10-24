@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your playlists - AQ Learning</title>
+  <meta name="description" content="Your lecture playlists: collect YouTube lectures, watch them in order and turn them into hand-drawn notes.">
+  <meta name="theme-color" content="#0a0a0a">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23fff'/%3E%3Ctext x='16' y='22' font-size='16' font-family='serif' font-weight='bold' text-anchor='middle' fill='%23000'%3EAQ%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#view">Skip to content</a>
+
+  <!-- ===== TOP BAR ===== -->
+  <header class="topbar">
+    <div class="topbar__in">
+      <a class="logo" href="#/" aria-label="AQ Learning - playlists">
+        <span class="logo__mark" aria-hidden="true">AQ</span>
+        <span class="logo__text">AQ Learning</span>
+      </a>
+      <form class="search" id="search-form" role="search" autocomplete="off">
+        <label class="sr" for="search">Search playlists by name</label>
+        <svg class="icon search__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11 4a7 7 0 100 14 7 7 0 000-14zM21 21l-4.3-4.3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <input id="search" type="search" name="q" placeholder="Search playlists" maxlength="60" enterkeyhint="search">
+      </form>
+      <span class="avatar" role="img" aria-label="Your account (placeholder)">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 3a4 4 0 100 8 4 4 0 000-8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+    </div>
+  </header>
+
+  <div class="banner" id="storage-warning" role="status" hidden>
+    Browser storage is unavailable, so your changes will be lost when you close this tab.
+  </div>
+
+  <!-- ===== SCREEN (rendered by app.js: #/ playlists, #/playlist/<id> detail) ===== -->
+  <main class="wrap" id="view" tabindex="-1"></main>
+
+  <p class="sr" id="live" aria-live="polite"></p>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <!-- ===== MODAL (player / notes / forms / confirm) ===== -->
+  <div class="modal" id="modal" hidden>
+    <div class="modal__backdrop" data-close></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1">
+      <button class="modal__close" type="button" data-close aria-label="Close dialog">&times;</button>
+      <p class="eyebrow" id="modal-kind"></p>
+      <h2 class="modal__title" id="modal-title"></h2>
+      <div class="modal__body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="util.js"></script>
+  <script src="store.js"></script>
+  <script src="api.js"></script>
+  <script src="dialog.js"></script>
+  <script src="notes.js"></script>
+  <script src="notebutton.js"></script>
+  <script src="notesview.js"></script>
+  <script src="player.js"></script>
+  <script src="water.js"></script>
+  <script src="clickspark.js"></script>
+  <script src="split.js"></script>
+  <script src="importpl.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

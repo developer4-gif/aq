@@ -193,6 +193,13 @@ def test_full_flow_done(make_client):
     want = base64.b64encode(hashlib.sha256(b"var x=1;").digest()).decode()
     assert f"script-src 'sha256-{want}';" in csp  # only the generated inline script may run
     assert "unsafe-inline'" not in csp.split("style-src")[0]
+    # the notebook (only) may be framed by the local UI on another port; everything else stays SAMEORIGIN
+    assert "frame-ancestors 'self' http://127.0.0.1:* http://localhost:*" in csp
+    assert "X-Frame-Options" not in html.headers
+    assert html.headers["X-Content-Type-Options"] == "nosniff"
+    assert pdf.headers["X-Frame-Options"] == "SAMEORIGIN"
+    assert "frame-ancestors 'self'" in nj.headers["Content-Security-Policy"]
+    assert "127.0.0.1" not in nj.headers["Content-Security-Policy"]
     # the key never lands on disk
     for f in (state.output_dir / job_id).iterdir():
         assert SECRET.encode() not in f.read_bytes()

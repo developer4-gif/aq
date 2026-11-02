@@ -1,0 +1,39 @@
+{
+  "order": [
+    {
+      "video_id": "BHqjEjzAicA",
+      "reason": "Introduces CAP theorem, a core distributed systems concept for design trade‑offs"
+    },
+    {
+      "video_id": "sCR3SAVdyCc",
+      "reason": "Explains load balancers, essential for scaling services"
+    },
+    {
+      "video_id": "_Ss42Vb1SU4",
+      "reason": "Compares SQL and NoSQL, giving baseline database knowledge"
+    },
+    {
+      "video_id": "i7twT3x5yv8",
+      "reason": "Provides the interview framework to structure any system design answer"
+    },
+    {
+      "video_id": "_gQaygjm_hg",
+      "reason": "Covers API design best practices, a key component of many system designs"
+    },
+    {
+      "video_id": "XP98YCr-iXQ",
+      "reason": "Delves into sharding, an advanced scaling technique building on database basics"
+    },
+    {
+      "video_id": "wh98s0XhMmQ",
+      "reason": "Discusses caching pitfalls, a performance optimization that follows sharding and load balancing"
+    }
+  ],
+  "unplaced": [
+    {
+      "video_id": "U-G-mSd4KAE",
+      "reason": "Focuses on Python decorators, unrelated to system design interview preparation"
+    }
+  ],
+  "path_summary": "Start with core distributed fundamentals, add networking and database basics, learn the interview framework, then deepen into API design, sharding, and caching."
+}

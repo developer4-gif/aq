@@ -7,6 +7,8 @@ Routes:
     POST /api/jobs
     GET  /api/jobs/<id>
     GET  /api/jobs/<id>/notes.json | notes.pdf | notes.html
+    POST /api/smart                 smart playlist: watch order + topics to cover (goal = playlist name)
+    GET  /api/smart/<id>
 
 The heavy modules (ingest / llm / pdf) are imported lazily inside the worker so
 the server starts even when one of them is missing or broken.
@@ -45,6 +47,7 @@ ENGINE_DIR = PROJECT_DIR / "notes_engine"  # fonts are served from notes_engine/
 DEFAULT_OUTPUT_DIR = BACKEND_DIR / "output"
 
 JOB_ID_RE = re.compile(r"^[0-9a-f]{32}$")
+VIDEO_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 KEY_RE = re.compile(r"^[\x21-\x7e]{1,512}$")  # printable ASCII, no whitespace
 MODEL_RE = re.compile(r"^[A-Za-z0-9._:/\-]{1,200}$")
 LOCAL_HOST_RE = re.compile(r"^(localhost|127\.0\.0\.1|\[::1\])(:\d{1,5})?$", re.I)
@@ -60,7 +63,7 @@ ENV_KEYS = {
 
 # Used only if llm.PROVIDERS cannot be imported (so the UI still renders).
 FALLBACK_PROVIDERS = {
-    "gemini": {"label": "Google Gemini", "default_model": "gemini-2.5-flash",
+    "gemini": {"label": "Google Gemini", "default_model": "gemini-3.5-flash-lite",
                "key_hint": "Free key at aistudio.google.com/apikey"},
     "groq": {"label": "Groq", "default_model": "llama-3.3-70b-versatile",
              "key_hint": "Free key at console.groq.com/keys"},
@@ -139,8 +142,10 @@ class State:
         self.max_active = max_active
         self.rate_limit = rate_limit
         self.jobs: dict[str, dict] = {}
+        self.smart_jobs: dict[str, dict] = {}          # smart-playlist runs (own store and rate bucket)
         self.lock = threading.Lock()
         self.recent: deque[float] = deque()
+        self.recent_smart: deque[float] = deque()
         self.recent_playlist: deque[float] = deque()   # separate bucket so playlist lookups can't starve note jobs
         self.playlist_slots = threading.BoundedSemaphore(2)  # at most 2 yt-dlp playlist fetches at once
 
@@ -157,8 +162,15 @@ class State:
             from notes_engine import ingest
             return ingest
 
+    def load_smart(self):
+        from notes_engine import smart_playlist  # lazy, like load_modules (tests monkeypatch this)
+        return smart_playlist
+
     def active_count(self) -> int:
         return sum(1 for j in self.jobs.values() if j["status"] in ("queued", "running"))
+
+    def active_smart(self) -> int:
+        return sum(1 for j in self.smart_jobs.values() if j["status"] in ("queued", "running"))
 
     def rate_limited(self, bucket: deque | None = None) -> bool:
         n, window = self.rate_limit
@@ -173,9 +185,10 @@ class State:
 
     def prune_memory(self, max_age_sec: int = 24 * 3600):
         cutoff = time.time() - max_age_sec
-        for jid in [k for k, j in self.jobs.items()
-                    if j["status"] in ("done", "error") and j["updated"] < cutoff]:
-            self.jobs.pop(jid, None)
+        for store in (self.jobs, self.smart_jobs):
+            for jid in [k for k, j in store.items()
+                        if j["status"] in ("done", "error") and j["updated"] < cutoff]:
+                store.pop(jid, None)
 
     def update(self, job: dict, **fields):
         with self.lock:
@@ -186,6 +199,15 @@ class State:
         with self.lock:
             out = {k: job[k] for k in ("status", "stage", "pct", "message") if k in job}
             for k in ("error", "meta", "links", "warning"):
+                if job.get(k):
+                    out[k] = job[k]
+            out["job_id"] = job["id"]
+        return out
+
+    def public_smart(self, job: dict) -> dict:
+        with self.lock:
+            out = {k: job[k] for k in ("status", "stage", "pct", "message", "model") if k in job}
+            for k in ("error", "result", "usage"):
                 if job.get(k):
                     out[k] = job[k]
             out["job_id"] = job["id"]
@@ -308,6 +330,53 @@ def _run_job(state: State, job_id: str, url: str, provider: str, api_key: str,
         state.update(job, status="error", error=msg[:600])
     finally:
         # drop references to the keys as soon as possible
+        secrets.clear()
+
+
+def _run_smart(state: State, job_id: str, goal: str, videos: list[dict], provider: str,
+               api_key: str, model: str | None):
+    job = state.smart_jobs[job_id]
+    secrets = [api_key]
+
+    def progress(stage, pct, message):
+        try:
+            fields = {"stage": str(stage)}
+            if int(pct) > job.get("pct", 0):
+                fields["pct"] = max(0, min(99, int(pct)))
+            if message:
+                fields["message"] = str(message)[:240]
+            state.update(job, **fields)
+        except Exception:  # a broken progress callback must never kill the job
+            pass
+
+    try:
+        state.update(job, status="running", stage="transcripts", pct=1, message="Starting...")
+        try:
+            smart = state.load_smart()
+        except ImportError as e:
+            log.error("module import failed: %s", _redact(e, secrets))
+            state.update(job, status="error", error="The notes engine is not fully installed yet "
+                         f"(missing module: {getattr(e, 'name', None) or 'unknown'}).")
+            return
+        out = smart.analyze(goal, videos, provider, api_key, model, progress=progress)
+        state.update(job, status="done", pct=100, message="Your learning path is ready.",
+                     result=out["result"], usage=out["usage"])
+    except Exception as e:  # map every failure to a safe message
+        safe = ()
+        try:
+            safe = tuple(t for t in (getattr(state.load_smart(), "LLMError", None),
+                                     getattr(state.load_ingest(), "IngestError", None)) if isinstance(t, type))
+        except Exception:
+            pass
+        if safe and isinstance(e, safe):
+            msg = _redact(str(e), secrets).strip() or GENERIC_ERROR
+            log.warning("smart job %s failed (%s): %s", job_id, type(e).__name__, msg)
+        else:
+            msg = GENERIC_ERROR
+            log.error("smart job %s crashed: %s: %s\n%s", job_id, type(e).__name__, _redact(e, secrets),
+                      _redact(traceback.format_exc(), secrets))
+        state.update(job, status="error", error=msg[:600])
+    finally:
         secrets.clear()
 
 
@@ -526,6 +595,90 @@ def create_app(config: dict | None = None) -> Flask:
                              args=(state, job_id, url, provider, api_key, model, groq_key))
         t.start()
         return jsonify(job_id=job_id), 202
+
+    @app.post("/api/smart")
+    def create_smart():
+        """POST /api/smart {goal, videos:[{id,title,channel,duration_sec}], provider, model?} -> 202 {job_id}."""
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return bad("Send a JSON body with a goal, a list of videos and a provider.")
+
+        goal = data.get("goal")
+        goal = " ".join(goal.split()) if isinstance(goal, str) else ""
+        if not goal:
+            return bad("The playlist needs a name (it is the learning goal).")
+        if len(goal) > 120:
+            return bad("The goal is too long (120 characters at most).")
+
+        raw = data.get("videos")
+        if not isinstance(raw, list) or not 2 <= len(raw) <= 20:
+            return bad("Send between 2 and 20 videos.")
+        videos, seen = [], set()
+        for v in raw:
+            vid = v.get("id") if isinstance(v, dict) else None
+            if not isinstance(vid, str) or not VIDEO_ID_RE.match(vid):
+                return bad("Every video needs an 11-character YouTube id.")
+            title, channel, dur = v.get("title"), v.get("channel"), v.get("duration_sec")
+            if not isinstance(title, str) or (channel is not None and not isinstance(channel, str)):
+                return bad("Every video needs a text title (and a text channel).")
+            if dur is not None and (isinstance(dur, bool) or not isinstance(dur, (int, float)) or dur < 0):
+                return bad("duration_sec must be a number of seconds.")
+            if vid in seen:
+                continue                      # the same video twice is analysed once
+            seen.add(vid)
+            videos.append({"id": vid, "title": title.strip()[:200], "channel": (channel or "").strip()[:120],
+                           "duration_sec": int(dur or 0)})
+        if len(videos) < 2:
+            return bad("Send between 2 and 20 different videos.")
+
+        provider = data.get("provider")
+        table = provider_table()
+        if not isinstance(provider, str) or provider not in table:
+            return bad("Unknown provider. Choose one of: " + ", ".join(PROVIDER_ORDER) + ".")
+        api_key = server_key(provider)        # keys never come from the browser here
+        if not api_key:
+            return bad(f"No API key for {table[provider]['label']}. Put {ENV_KEYS[provider]} in backend/.env.")
+
+        model = data.get("model")
+        if model not in (None, ""):
+            if not isinstance(model, str) or not MODEL_RE.match(model.strip()):
+                return bad("The model name looks invalid.")
+            model = model.strip()
+        else:
+            model = None
+        used_model = model or table[provider]["default_model"]
+        if provider == "gemini":
+            used_model = used_model.removeprefix("models/")
+
+        try:
+            state.load_smart()
+        except ImportError:
+            return bad("The notes engine is not fully installed yet.", 503)
+
+        with state.lock:
+            state.prune_memory()
+            if state.active_smart() >= state.max_active:
+                return bad("The server is busy with other analyses right now. "
+                           "Please wait a minute and try again.", 429)
+            if state.rate_limited(state.recent_smart):
+                return bad("Too many requests - please slow down a little.", 429)
+            job_id = uuid.uuid4().hex
+            now = time.time()
+            job = {"id": job_id, "status": "queued", "stage": "transcripts", "pct": 0, "model": used_model,
+                   "message": "Queued...", "created": now, "updated": now}
+            state.smart_jobs[job_id] = job
+
+        t = threading.Thread(target=_run_smart, name=f"smart-{job_id[:8]}", daemon=True,
+                             args=(state, job_id, goal, videos, provider, api_key, model))
+        t.start()
+        return jsonify(job_id=job_id), 202
+
+    @app.get("/api/smart/<job_id>")
+    def smart_status(job_id):
+        job = state.smart_jobs.get(job_id) if JOB_ID_RE.match(job_id or "") else None
+        if job is None:
+            return bad("Job not found (the server may have been restarted).", 404)
+        return jsonify(state.public_smart(job))
 
     @app.get("/api/playlist")
     def playlist():

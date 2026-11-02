@@ -1,0 +1,132 @@
+{
+  "areas": [
+    {
+      "area": "System Design Interview Framework",
+      "why": "Provides a structured approach to answer design questions",
+      "status": "covered",
+      "covered_by": [
+        "i7twT3x5yv8"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "Load Balancing",
+      "why": "Distributes traffic to ensure availability and performance",
+      "status": "covered",
+      "covered_by": [
+        "sCR3SAVdyCc"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "Caching Strategies & Pitfalls",
+      "why": "Improves latency and reduces load on back‑ends",
+      "status": "covered",
+      "covered_by": [
+        "wh98s0XhMmQ"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "Database Sharding",
+      "why": "Enables horizontal scaling of data stores",
+      "status": "covered",
+      "covered_by": [
+        "XP98YCr-iXQ"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "CAP Theorem & Consistency Models",
+      "why": "Fundamental trade‑offs in distributed systems",
+      "status": "covered",
+      "covered_by": [
+        "BHqjEjzAicA"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "API Design Principles",
+      "why": "Designing clean, usable interfaces is key in many systems",
+      "status": "covered",
+      "covered_by": [
+        "_gQaygjm_hg"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "SQL vs NoSQL & Data Modeling",
+      "why": "Choosing the right storage model affects scalability",
+      "status": "covered",
+      "covered_by": [
+        "_Ss42Vb1SU4"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "Scalability & Performance Trade‑offs",
+      "why": "Understanding how to scale and where bottlenecks arise",
+      "status": "partial",
+      "covered_by": [],
+      "priority": "high"
+    },
+    {
+      "area": "Monitoring & Observability",
+      "why": "Ensures system health and aids debugging",
+      "status": "missing",
+      "covered_by": [],
+      "priority": "medium"
+    },
+    {
+      "area": "Security & Authentication in Distributed Systems",
+      "why": "Protects data and services from threats",
+      "status": "missing",
+      "covered_by": [],
+      "priority": "medium"
+    }
+  ],
+  "suggestions": [
+    {
+      "topic": "Scalability and performance trade‑offs in system design",
+      "reason": "Partial coverage; need deeper overview",
+      "search_query": "system design scalability trade offs overview",
+      "kind": "overview"
+    },
+    {
+      "topic": "Monitoring and observability for large‑scale systems",
+      "reason": "Missing critical operational knowledge",
+      "search_query": "system design monitoring observability short tutorial",
+      "kind": "overview"
+    },
+    {
+      "topic": "Security considerations in system design interviews",
+      "reason": "Missing security fundamentals",
+      "search_query": "system design security best practices interview",
+      "kind": "overview"
+    },
+    {
+      "topic": "Rate limiting and throttling strategies",
+      "reason": "Common interview topic not covered",
+      "search_query": "system design rate limiting deep dive",
+      "kind": "deep-dive"
+    },
+    {
+      "topic": "Data partitioning beyond sharding (e.g., consistent hashing)",
+      "reason": "Enhance understanding of partitioning techniques",
+      "search_query": "consistent hashing system design tutorial",
+      "kind": "deep-dive"
+    },
+    {
+      "topic": "Designing for fault tolerance and redundancy",
+      "reason": "Key for resilient architectures",
+      "search_query": "system design fault tolerance practice",
+      "kind": "practice"
+    }
+  ],
+  "off_goal": [
+    {
+      "video_id": "U-G-mSd4KAE",
+      "reason": "Focuses on Python decorators, unrelated to system design interview preparation"
+    }
+  ]
+}

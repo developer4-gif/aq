@@ -8,6 +8,12 @@ $req     = Join-Path $root "pyproject.toml"
 $stamp   = Join-Path $venv ".requirements.sha256"
 $url     = "http://127.0.0.1:5055"
 
+# keep pip's cache and scratch files inside this folder (same drive as the project, not the system drive)
+$tmp = Join-Path $root "backend\.tmp"
+New-Item -ItemType Directory -Force $tmp | Out-Null
+$env:TEMP = $tmp; $env:TMP = $tmp
+$env:PIP_CACHE_DIR = Join-Path $root ".cache\pip"
+
 # 1. virtual environment
 if (-not (Test-Path $py)) {
     Write-Host "Creating virtual environment..." -ForegroundColor Cyan

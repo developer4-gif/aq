@@ -1,0 +1,226 @@
+{
+  "profiles": [
+    {
+      "video_id": "wh98s0XhMmQ",
+      "level": "intermediate",
+      "summary": "The video explains common caching problems and how to mitigate them.",
+      "topics": [
+        {
+          "name": "Cache Stampede",
+          "evidence": "Cache Stampede happens when many requests simultaneously hit the same expired cache entry"
+        },
+        {
+          "name": "Cache Penetration",
+          "evidence": "Cache Penetration ... request is made for data that doesn’t exist"
+        },
+        {
+          "name": "Placeholder Values",
+          "evidence": "implement a placeholder value for non-existent keys"
+        },
+        {
+          "name": "Bloom Filter Use",
+          "evidence": "uses bloom filters ... checking if elements are in a set"
+        },
+        {
+          "name": "Cache Prewarming",
+          "evidence": "cache prewarming ... proactively populated in the cold cache"
+        }
+      ],
+      "prerequisites": [
+        "Caching basics",
+        "Redis"
+      ]
+    },
+    {
+      "video_id": "XP98YCr-iXQ",
+      "level": "intermediate",
+      "summary": "The video introduces database sharding concepts, methods, and shard‑key selection criteria.",
+      "topics": [
+        {
+          "name": "Sharding Definition",
+          "evidence": "sharding is simply splitting a large database into smaller pieces"
+        },
+        {
+          "name": "Range Sharding",
+          "evidence": "first range from A to I might contain significantly more customer names"
+        },
+        {
+          "name": "Hash Sharding",
+          "evidence": "use a mathematical formula ... produce 1, store in shard number 1"
+        },
+        {
+          "name": "Directory Sharding",
+          "evidence": "directory sharding ... uses a lookup table to decide where to store the record"
+        },
+        {
+          "name": "Shard‑Key Selection",
+          "evidence": "Good shard-key selection can evenly distribute data across multiple shards"
+        }
+      ],
+      "prerequisites": [
+        "Relational databases",
+        "Basic query performance"
+      ]
+    },
+    {
+      "video_id": "BHqjEjzAicA",
+      "level": "beginner",
+      "summary": "Explains the CAP theorem and its trade‑offs in distributed systems.",
+      "topics": [
+        {
+          "name": "Consistency definition",
+          "evidence": "Consistency refers to the property of a system"
+        },
+        {
+          "name": "Availability definition",
+          "evidence": "Availability refers to the ability of a system to respond"
+        },
+        {
+          "name": "Partition tolerance definition",
+          "evidence": "Partition tolerance refers to the ability of a system to continue operating"
+        },
+        {
+          "name": "Trade‑off choice",
+          "evidence": "system must choose between consistency and availability"
+        },
+        {
+          "name": "Usefulness of CAP",
+          "evidence": "CAP theorem useful? Yes, it is a useful tool"
+        }
+      ],
+      "prerequisites": [
+        "Distributed systems basics",
+        "Network fundamentals"
+      ]
+    },
+    {
+      "video_id": "U-G-mSd4KAE",
+      "level": "beginner",
+      "summary": "Shows how to create and use decorators to extend functions in Python.",
+      "topics": [
+        {
+          "name": "Decorator definition",
+          "evidence": "decorator is a function that extends the behavior of another function"
+        },
+        {
+          "name": "Passing base function",
+          "evidence": "pass the base function as an argument to the decorator"
+        },
+        {
+          "name": "Wrapper function necessity",
+          "evidence": "wrapper function ... It is necessary to have this"
+        },
+        {
+          "name": "Accepting arbitrary arguments",
+          "evidence": "wrapper function will accept any number of arguments and keyword arguments"
+        }
+      ],
+      "prerequisites": [
+        "Python functions",
+        "Basic syntax"
+      ]
+    },
+    {
+      "video_id": "i7twT3x5yv8",
+      "level": "intermediate",
+      "summary": "The video teaches a four‑step framework for tackling system design interviews.",
+      "topics": [
+        {
+          "name": "framework steps",
+          "evidence": "Step 1 - Understand the problem and establish design scope"
+        },
+        {
+          "name": "time allocation",
+          "evidence": "allocate about 5 minutes to step 1, 20 mins to step 2"
+        },
+        {
+          "name": "high‑level diagram",
+          "evidence": "lay out the high-level design diagram"
+        },
+        {
+          "name": "trade‑off discussion",
+          "evidence": "discuss the trade-offs of the solutions"
+        }
+      ],
+      "prerequisites": [
+        "basic system design concepts",
+        "interview etiquette"
+      ]
+    },
+    {
+      "video_id": "_gQaygjm_hg",
+      "level": "intermediate",
+      "summary": "The video presents best practices for designing reliable, clear, and scalable RESTful APIs.",
+      "topics": [
+        {
+          "name": "clear naming",
+          "evidence": "استخدم تسميات واضحة"
+        },
+        {
+          "name": "idempotent operations",
+          "evidence": "خاصية \"الإيديمبوتنس\" أن إجراء نفس الطلب عدة مرات له نفس تأثير"
+        },
+        {
+          "name": "versioning strategy",
+          "evidence": "إصدار مع الإصدارات السابقة"
+        },
+        {
+          "name": "pagination methods",
+          "evidence": "خاصية الترقيم (Pagination)"
+        }
+      ],
+      "prerequisites": [
+        "understanding of REST principles",
+        "basic HTTP methods"
+      ]
+    },
+    {
+      "video_id": "sCR3SAVdyCc",
+      "level": "beginner",
+      "summary": "Explains what a network load balancer is and how it distributes traffic using common algorithms.",
+      "topics": [
+        {
+          "name": "Network Load Balancer",
+          "evidence": "what is a network load balancer?"
+        },
+        {
+          "name": "Round Robin Algorithm",
+          "evidence": "use an algorithm called Round Robin"
+        },
+        {
+          "name": "Random Selection Algorithm",
+          "evidence": "random select"
+        }
+      ],
+      "prerequisites": [
+        "basic networking"
+      ]
+    },
+    {
+      "video_id": "_Ss42Vb1SU4",
+      "level": "beginner",
+      "summary": "Compares SQL and NoSQL databases, covering their strengths, weaknesses, and scalability characteristics.",
+      "topics": [
+        {
+          "name": "SQL vs NoSQL",
+          "evidence": "databases are split into SQL and NoSQL types"
+        },
+        {
+          "name": "Scalability Differences",
+          "evidence": "SQL databases are vertically scalable, while NoSQL databases are horizontally scalable"
+        },
+        {
+          "name": "ACID Compliance",
+          "evidence": "SQL databases are ACID-compliant"
+        },
+        {
+          "name": "Eventual Consistency",
+          "evidence": "called eventual consistency"
+        }
+      ],
+      "prerequisites": [
+        "basic database concepts"
+      ]
+    }
+  ]
+}

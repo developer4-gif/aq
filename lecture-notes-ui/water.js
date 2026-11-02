@@ -12,7 +12,7 @@
            the button rect is cached (re-read only after scroll/resize or on enter).
    Reduced motion: static glass, no animation, the action runs immediately.
 
-   AQ.water.button(label, { icon: "plus", onActivate: fn }) -> <button> */
+   AQ.water.button(label, { icon: "plus" | iconNode: <svg>, cls: "extra-class", onActivate: fn }) -> <button> */
 (function () {
   "use strict";
   var u = AQ.util, el = u.el;
@@ -126,11 +126,12 @@
   function button(label, opts) {
     opts = opts || {};
     sweep();
-    var btn = el("button", "wbtn");
+    var btn = el("button", "wbtn" + (opts.cls ? " " + opts.cls : ""));
     btn.type = "button";
     var glass = el("span", "wbtn__glass"), spot = el("span", "wbtn__spot"), rim = el("span", "wbtn__rim");
     var face = el("span", "wbtn__face");
-    if (opts.icon) face.appendChild(u.icon(opts.icon));
+    if (opts.iconNode) face.appendChild(opts.iconNode);   // a ready-made icon (the Smart arrange sparkle)
+    else if (opts.icon) face.appendChild(u.icon(opts.icon));
     face.appendChild(el("span", "wbtn__label", label));
     [glass, spot, rim, face].forEach(function (n) { btn.appendChild(n); });
     function activate() { opts.onActivate && opts.onActivate(btn); }

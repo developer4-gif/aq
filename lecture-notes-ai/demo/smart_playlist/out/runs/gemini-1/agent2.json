@@ -1,0 +1,39 @@
+{
+  "order": [
+    {
+      "video_id": "i7twT3x5yv8",
+      "reason": "This video provides a foundational step-by-step framework specifically for approaching system design interviews."
+    },
+    {
+      "video_id": "sCR3SAVdyCc",
+      "reason": "This video introduces load balancers, a core building block for scalable system architectures."
+    },
+    {
+      "video_id": "_Ss42Vb1SU4",
+      "reason": "This video explains the fundamental differences between SQL and NoSQL databases and their scaling models."
+    },
+    {
+      "video_id": "XP98YCr-iXQ",
+      "reason": "This video builds on database concepts by explaining database sharding methods for horizontal scaling."
+    },
+    {
+      "video_id": "BHqjEjzAicA",
+      "reason": "This video covers the CAP theorem, which is essential for understanding distributed database trade-offs."
+    },
+    {
+      "video_id": "wh98s0XhMmQ",
+      "reason": "This video details advanced caching pitfalls and prevention strategies to optimize system performance."
+    },
+    {
+      "video_id": "_gQaygjm_hg",
+      "reason": "This video teaches best practices for designing robust RESTful APIs needed in system architecture."
+    }
+  ],
+  "unplaced": [
+    {
+      "video_id": "U-G-mSd4KAE",
+      "reason": "This video is about Python decorators and does not contribute to system design interview preparation."
+    }
+  ],
+  "path_summary": "This learning path guides you from the interview framework and core scaling components like load balancers and databases to advanced topics such as sharding, the CAP theorem, caching pitfalls, and API design."
+}

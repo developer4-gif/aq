@@ -83,7 +83,7 @@ The building blocks are exported too: `parse_video_id`, `get_transcript`, `gener
 
 | Provider | Get a key | Default model | Notes |
 |---|---|---|---|
-| Google Gemini | <https://aistudio.google.com/apikey> | `gemini-2.5-flash` | Generous free tier; large context |
+| Google Gemini | <https://aistudio.google.com/apikey> | `gemini-3.5-flash-lite` | Generous free tier; large context |
 | Groq | <https://console.groq.com/keys> | `openai/gpt-oss-120b` | Free tier, very fast. The same key transcribes audio (Whisper) for videos without captions |
 | Hugging Face | <https://huggingface.co/settings/tokens> | `meta-llama/Llama-3.3-70B-Instruct` | Token needs permission to call *Inference Providers* |
 | xAI Grok | <https://console.x.ai> | `grok-4` | Paid API |

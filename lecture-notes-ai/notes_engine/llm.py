@@ -36,14 +36,14 @@ from typing import Any, Callable
 
 import requests
 
-from . import prompts
+from . import cache, prompts
 from .notes_schema import format_duration, validate_notes
 
 # ------------------------------------------------------------ public API ----
 PROVIDERS: dict[str, dict] = {
     "gemini": {
         "label": "Google Gemini",
-        "default_model": "gemini-2.5-flash",
+        "default_model": "gemini-3.5-flash-lite",
         "needs_key": True,
         "key_hint": "Free key from aistudio.google.com/apikey (starts with AIza...)",
     },
@@ -633,6 +633,13 @@ def _digest_chunks(client: _Client, chunks: list[dict], meta: dict, report: _Rep
         report(5 + int(40 * i / max(1, len(chunks))), f"Extracting key knowledge ({i + 1}/{len(chunks)})...")
         text = ch["text"]
         msgs = prompts.digest_messages(text, i, len(chunks), meta, prompts.digest_word_budget(len(text)))
+        # the prompt text is part of the key, so editing a prompt or switching model never reuses old digests
+        ck = cache.make_key("digest", 1, client.provider, client.model, msgs, prof["digest_out"], prof["digest_cap"])
+        hit = cache.get("digest", ck)
+        if isinstance(hit, dict) and str(hit.get("d", "")).strip():
+            digests.append(str(hit["d"]))
+            continue
+        from_model = True
         try:
             try:
                 obj = client.ask_json(msgs, prof["digest_out"], 0.2)
@@ -642,8 +649,11 @@ def _digest_chunks(client: _Client, chunks: list[dict], meta: dict, report: _Rep
             d = prompts.digest_to_text(obj, prof["digest_cap"]) if isinstance(obj, dict) else ""
         except (_BadJSON, _OutputTruncated, ValueError):
             d = text[: prof["digest_cap"]]  # degrade: feed raw slice head instead of aborting
+            from_model = False
         if d.strip():
             digests.append(d)
+            if from_model:  # never cache the degraded fallback: a retry should get another chance
+                cache.put("digest", ck, {"d": d})
     return digests
 
 
@@ -685,6 +695,12 @@ def _compose_covered(client: _Client, meta: dict, digs: list[str], n: int, cap: 
     with a stricter instruction (one section per consecutive time group) and keep the better result."""
     n = max(1, min(n, cap))
     n_max = min(cap, n + 1)
+    first = prompts.compose_batch_messages(meta, "\n\n".join(digs), n, n_max, prior, no, total, "")
+    ck = cache.make_key("compose", 1, client.provider, client.model, first, client.profile["out_batch"])
+    hit = cache.get("compose", ck)
+    if isinstance(hit, dict) and isinstance(hit.get("sections"), list) \
+            and _usable_count(hit["sections"]) >= _coverage_needed(n):
+        return hit["sections"]
     got = _compose_batch(client, meta, digs, n, n_max, prior, no, total)
     have = _usable_count(got)
     if have < _coverage_needed(n):
@@ -695,6 +711,8 @@ def _compose_covered(client: _Client, meta: dict, digs: list[str], n: int, cap: 
         again = _compose_batch(client, meta, digs, n, n_max, prior, no, total, strict)
         if _usable_count(again) > have:
             got = again
+    if _usable_count(got) >= _coverage_needed(n):  # only an accepted answer is remembered
+        cache.put("compose", ck, {"sections": got})
     return got
 
 

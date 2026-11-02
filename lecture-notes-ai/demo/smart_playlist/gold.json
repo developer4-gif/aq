@@ -1,0 +1,39 @@
+{
+  "_note": "PROVISIONAL reference answers written by the assistant, not by a domain expert. Only 'off_goal' is certain (that video was injected on purpose). The order constraints and keywords are reasonable defaults that the playlist owner should review and edit.",
+  "goal": "System Design Interview Prep",
+  "videos": {
+    "wh98s0XhMmQ": "Caching Pitfalls Every Developer Should Know",
+    "XP98YCr-iXQ": "What is Database Sharding?",
+    "BHqjEjzAicA": "CAP Theorem Simplified",
+    "U-G-mSd4KAE": "Learn Python DECORATORS in 7 minutes",
+    "i7twT3x5yv8": "System Design Interview: A Step-By-Step Guide",
+    "_gQaygjm_hg": "Good APIs Vs Bad APIs",
+    "sCR3SAVdyCc": "What is a Load Balancer?",
+    "_Ss42Vb1SU4": "SQL vs. NoSQL Explained"
+  },
+  "off_goal": ["U-G-mSd4KAE"],
+  "framework_video": "i7twT3x5yv8",
+  "order_constraints": [
+    {"before": "i7twT3x5yv8", "after": "sCR3SAVdyCc", "why": "the interview framework frames every later topic"},
+    {"before": "i7twT3x5yv8", "after": "_Ss42Vb1SU4", "why": "the interview framework frames every later topic"},
+    {"before": "i7twT3x5yv8", "after": "_gQaygjm_hg", "why": "the interview framework frames every later topic"},
+    {"before": "i7twT3x5yv8", "after": "XP98YCr-iXQ", "why": "the interview framework frames every later topic"},
+    {"before": "i7twT3x5yv8", "after": "wh98s0XhMmQ", "why": "the interview framework frames every later topic"},
+    {"before": "i7twT3x5yv8", "after": "BHqjEjzAicA", "why": "the interview framework frames every later topic"},
+    {"before": "_Ss42Vb1SU4", "after": "XP98YCr-iXQ", "why": "sharding splits a database, so know the database types first"},
+    {"before": "_Ss42Vb1SU4", "after": "BHqjEjzAicA", "why": "CAP is about distributed databases, so know the database types first"}
+  ],
+  "expected_gaps": [
+    {"name": "Message queues / async processing", "keywords": ["queue", "kafka", "rabbit", "asynchronous", "async"]},
+    {"name": "Rate limiting", "keywords": ["rate limit", "throttl"]},
+    {"name": "CDN / content delivery", "keywords": ["cdn", "content delivery"]},
+    {"name": "Worked case studies", "keywords": ["case stud", "url shortener", "design problem", "walkthrough"]}
+  ],
+  "expected_covered": [
+    {"name": "Load balancing", "keywords": ["load balanc"], "video": "sCR3SAVdyCc"},
+    {"name": "Caching", "keywords": ["cach"], "video": "wh98s0XhMmQ"},
+    {"name": "Sharding", "keywords": ["shard"], "video": "XP98YCr-iXQ"},
+    {"name": "CAP theorem", "keywords": ["cap theorem", "cap trade"], "video": "BHqjEjzAicA"},
+    {"name": "SQL vs NoSQL", "keywords": ["sql"], "video": "_Ss42Vb1SU4"}
+  ]
+}

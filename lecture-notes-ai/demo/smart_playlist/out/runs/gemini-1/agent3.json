@@ -1,0 +1,114 @@
+{
+  "areas": [
+    {
+      "area": "System Design Interview Framework",
+      "why": "Crucial for understanding how to structure and navigate a system design interview.",
+      "status": "covered",
+      "covered_by": [
+        "i7twT3x5yv8"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "Load Balancing",
+      "why": "Essential for distributing incoming network traffic across multiple servers.",
+      "status": "covered",
+      "covered_by": [
+        "sCR3SAVdyCc"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "Caching Strategies",
+      "why": "Important for reducing latency and handling heavy read loads.",
+      "status": "covered",
+      "covered_by": [
+        "wh98s0XhMmQ"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "Database Scaling and Sharding",
+      "why": "Necessary for scaling data storage horizontally as data grows.",
+      "status": "covered",
+      "covered_by": [
+        "XP98YCr-iXQ"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "Distributed Systems Principles (CAP Theorem)",
+      "why": "Fundamental for making trade-offs between consistency and availability in distributed data stores.",
+      "status": "covered",
+      "covered_by": [
+        "BHqjEjzAicA"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "SQL vs NoSQL Databases",
+      "why": "Helps in choosing the right database paradigm for specific system requirements.",
+      "status": "covered",
+      "covered_by": [
+        "_Ss42Vb1SU4"
+      ],
+      "priority": "medium"
+    },
+    {
+      "area": "API Design",
+      "why": "Important for defining clean interfaces between clients and services.",
+      "status": "partial",
+      "covered_by": [
+        "_gQaygjm_hg"
+      ],
+      "priority": "medium"
+    },
+    {
+      "area": "Message Queues and Event-Driven Architecture",
+      "why": "Required for asynchronous processing and decoupling microservices.",
+      "status": "missing",
+      "covered_by": [],
+      "priority": "high"
+    },
+    {
+      "area": "Rate Limiting",
+      "why": "Crucial for protecting services from overload and abuse.",
+      "status": "missing",
+      "covered_by": [],
+      "priority": "high"
+    },
+    {
+      "area": "Content Delivery Networks (CDN)",
+      "why": "Necessary for optimizing static content delivery globally.",
+      "status": "missing",
+      "covered_by": [],
+      "priority": "medium"
+    }
+  ],
+  "suggestions": [
+    {
+      "topic": "Message Queues and Event-Driven Architecture",
+      "reason": "Understanding message brokers like Kafka or RabbitMQ is essential for large-scale system design.",
+      "search_query": "system design message queues kafka rabbitmq architecture",
+      "kind": "overview"
+    },
+    {
+      "topic": "Rate Limiting",
+      "reason": "Common interview topic for protecting APIs using algorithms like token bucket.",
+      "search_query": "system design interview rate limiter algorithms",
+      "kind": "deep-dive"
+    },
+    {
+      "topic": "Content Delivery Networks (CDN)",
+      "reason": "Frequently asked when discussing how to serve static assets efficiently across the globe.",
+      "search_query": "system design cdn content delivery network architecture",
+      "kind": "overview"
+    }
+  ],
+  "off_goal": [
+    {
+      "video_id": "U-G-mSd4KAE",
+      "reason": "Python decorators are a language-specific programming feature, not relevant to high-level system design interviews."
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "provider": "groq",
+  "model": "openai/gpt-oss-120b",
+  "source": "provider API responses",
+  "calls": [
+    {
+      "agent": 1,
+      "label": "profiler batch 1/4",
+      "prompt_tokens": 1966,
+      "completion_tokens": 346,
+      "reasoning_tokens": 55,
+      "total_tokens": 2312,
+      "api_seconds": 1.39
+    },
+    {
+      "agent": 1,
+      "label": "profiler batch 2/4",
+      "prompt_tokens": 2026,
+      "completion_tokens": 838,
+      "reasoning_tokens": 541,
+      "total_tokens": 2864,
+      "api_seconds": 2.43
+    },
+    {
+      "agent": 1,
+      "label": "profiler batch 3/4",
+      "prompt_tokens": 2390,
+      "completion_tokens": 365,
+      "reasoning_tokens": 41,
+      "total_tokens": 2755,
+      "api_seconds": 1.44
+    },
+    {
+      "agent": 1,
+      "label": "profiler batch 4/4",
+      "prompt_tokens": 2020,
+      "completion_tokens": 397,
+      "reasoning_tokens": 170,
+      "total_tokens": 2417,
+      "api_seconds": 1.44
+    },
+    {
+      "agent": 2,
+      "label": "sequencer",
+      "prompt_tokens": 1214,
+      "completion_tokens": 447,
+      "reasoning_tokens": 164,
+      "total_tokens": 1661,
+      "api_seconds": 1.48
+    },
+    {
+      "agent": 3,
+      "label": "gap analyst",
+      "prompt_tokens": 1364,
+      "completion_tokens": 1099,
+      "reasoning_tokens": 470,
+      "total_tokens": 2463,
+      "api_seconds": 3.01
+    }
+  ],
+  "per_agent": {
+    "1": {
+      "calls": 4,
+      "prompt_tokens": 8402,
+      "completion_tokens": 1946,
+      "reasoning_tokens": 807,
+      "total_tokens": 10348,
+      "api_seconds": 6.7,
+      "wall_seconds": 188.2
+    },
+    "2": {
+      "calls": 1,
+      "prompt_tokens": 1214,
+      "completion_tokens": 447,
+      "reasoning_tokens": 164,
+      "total_tokens": 1661,
+      "api_seconds": 1.5,
+      "wall_seconds": 62.0
+    },
+    "3": {
+      "calls": 1,
+      "prompt_tokens": 1364,
+      "completion_tokens": 1099,
+      "reasoning_tokens": 470,
+      "total_tokens": 2463,
+      "api_seconds": 3.0,
+      "wall_seconds": 63.5
+    }
+  },
+  "totals": {
+    "calls": 6,
+    "prompt_tokens": 10980,
+    "completion_tokens": 3492,
+    "reasoning_tokens": 1441,
+    "total_tokens": 14472,
+    "api_seconds": 11.2,
+    "wall_seconds": 313.7,
+    "waiting_seconds": 302.5
+  }
+}

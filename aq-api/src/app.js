@@ -5,12 +5,14 @@ import { openDb } from "./db.js";
 import { createRepo } from "./repo.js";
 import { createPyClient, assertPyUrl } from "./pyclient.js";
 import { createNotesService } from "./notes-service.js";
+import { createSmartService } from "./smart-service.js";
 import { HttpError } from "./http.js";
 import { localAuth } from "./middleware/auth.js";
 import { securityHeaders, hostGuard, cors, rateLimit } from "./middleware/security.js";
 import { playlistRoutes } from "./routes/playlists.js";
 import { progressRoutes } from "./routes/progress.js";
 import { notesRoutes, fontRoutes } from "./routes/notes.js";
+import { smartRoutes } from "./routes/smart.js";
 import { healthRoutes, meRoutes, importRoutes, syncRoutes } from "./routes/misc.js";
 
 export const VERSION = "0.1.0";
@@ -23,6 +25,7 @@ export function createApp(config, deps = {}) {
   const repo = createRepo(db);
   const py = createPyClient({ baseUrl: config.pyUrl, timeoutMs: config.notes.pyTimeoutMs, fetchImpl: deps.fetchImpl || fetch });
   const notes = createNotesService({ db, repo, py, config, clock: deps.clock || Date.now });
+  const smart = createSmartService({ db, repo, py, config, clock: deps.clock || Date.now });
   const authenticate = deps.authenticate || localAuth;
 
   const app = express();
@@ -55,6 +58,7 @@ export function createApp(config, deps = {}) {
   api.use(playlistRoutes(repo));
   api.use(progressRoutes(repo));
   api.use(notesRoutes(notes, heavy));
+  api.use(smartRoutes(smart, heavy));
   api.use(importRoutes(py, config, heavy));
   api.use((_req, _res, next) => next(new HttpError(404, "Not found.")));
   app.use("/api/v1", api);

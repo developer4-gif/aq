@@ -1,0 +1,58 @@
+/* smart: button + magic (smartmagic.js).
+   The Smart arrange button is the liquid-glass lens from water.js (.wbtn), 42px like its siblings on the playlist screen.
+   Idle = plain glass + a white four-point sparkle (quiet twinkle). Charging / burst add a purple->pink back-light and ring that
+   follow three custom properties the script writes each frame: --ch (charge 0..1), --sp (spin, deg), --bf (burst flash 0..1).
+   Nothing here changes layout. */
+.wbtn.smart-wbtn { height: 42px; padding: 0 22px 0 18px; font-size: 14px; --ch: 0; --sp: 0; --bf: 0; }
+.smart-wbtn[disabled] { opacity: .5; cursor: not-allowed; }
+.smart-wbtn[aria-busy="true"] { cursor: progress; }
+.smart-wbtn .wbtn__face { gap: 9px; }
+.smart-wbtn__spark {
+  width: 16px; height: 16px; flex: none; color: var(--white);
+  filter: drop-shadow(0 0 5px rgba(255,255,255,.35));
+  transition: rotate .55s var(--ease), scale .3s var(--ease);
+  animation: smart-twinkle 5.5s ease-in-out infinite;
+}
+.smart-wbtn:not([disabled]):hover .smart-wbtn__spark, .smart-wbtn:not([disabled]):focus-visible .smart-wbtn__spark { rotate: 90deg; }
+@keyframes smart-twinkle { 0%, 84%, 100% { scale: 1; opacity: 1; } 92% { scale: 1.2; opacity: .75; } }
+
+/* back-light and ring: only exist while a sequence runs */
+.smart-wbtn::before, .smart-wbtn::after { content: none; }
+.smart-wbtn.is-charging::before, .smart-wbtn.is-burst::before {
+  content: ""; position: absolute; inset: -5px; z-index: -1; border-radius: inherit; pointer-events: none;
+  background: conic-gradient(from calc(var(--sp) * 1deg), #8b5cf6, #ec4899, #cfd2d8, #8b5cf6);
+  filter: blur(11px); opacity: calc(.42 * var(--ch) + .5 * var(--bf));
+}
+.smart-wbtn.is-charging::after, .smart-wbtn.is-burst::after {
+  content: ""; position: absolute; inset: 0; z-index: 4; padding: 1.5px; border-radius: inherit; pointer-events: none;
+  background: conic-gradient(from calc(var(--sp) * 1deg), rgba(139,92,246,.9), rgba(236,72,153,.9) 30%, rgba(255,255,255,.95) 50%, rgba(236,72,153,.9) 70%, rgba(139,92,246,.9));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  opacity: calc(.4 * var(--ch) + .6 * var(--bf));
+}
+.smart-wbtn.is-charging .smart-wbtn__spark, .smart-wbtn.is-burst .smart-wbtn__spark {
+  animation: none; transition: none;
+  rotate: calc(var(--sp) * 1deg);
+  scale: calc(1 + .3 * var(--ch) + .35 * var(--bf));
+  filter: drop-shadow(0 0 calc(4px + 8px * var(--ch)) rgba(196,160,255,.9));
+}
+
+/* the rows that were moved glow once, after they have landed (the delay is set per row from the glide's stagger) */
+.vrow.smart-moved { z-index: 2; animation: smart-moved 1.5s ease-out backwards; animation-delay: calc(var(--d, 0ms) + 480ms); }
+@keyframes smart-moved {
+  0%   { border-color: var(--line); box-shadow: 0 0 0 0 rgba(190,170,255,0); }
+  22%  { border-color: rgba(255,255,255,.7); box-shadow: 0 0 0 1px rgba(255,255,255,.3), 0 0 26px rgba(167,139,250,.3); }
+  100% { border-color: var(--line); box-shadow: 0 0 0 0 rgba(190,170,255,0); }
+}
+
+/* the burst + motes canvas (below the global click spark) */
+.smart-fx { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 9990; pointer-events: none; }
+
+@media (max-width: 560px) { .dhead__actions .smart-wbtn { flex: 1 1 calc(50% - 10px); } }
+@media (prefers-reduced-motion: reduce) {
+  .smart-fx { display: none !important; }
+  .smart-wbtn__spark { animation: none; transition: none; }
+  .smart-wbtn:not([disabled]):hover .smart-wbtn__spark, .smart-wbtn:not([disabled]):focus-visible .smart-wbtn__spark { rotate: none; }
+  .vrow.smart-moved { animation: none; }
+}

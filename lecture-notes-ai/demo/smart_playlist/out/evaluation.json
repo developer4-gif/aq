@@ -1,0 +1,1260 @@
+{
+  "generated": "2026-11-02T13:09:04",
+  "gold_note": "PROVISIONAL reference answers written by the assistant, not by a domain expert. Only 'off_goal' is certain (that video was injected on purpose). The order constraints and keywords are reasonable defaults that the playlist owner should review and edit.",
+  "runs": [
+    {
+      "label": "claude-standin",
+      "provider": "claude (stand-in)",
+      "model": "Claude Sonnet subagents",
+      "kind": "stand-in",
+      "metrics": [
+        {
+          "key": "grounding_rate",
+          "group": "Grounding",
+          "label": "Topics backed by a transcript quote",
+          "value": 0.8974,
+          "display": "35 / 39 (90%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of claimed topics whose quoted evidence was found in the transcript excerpt (stats.topics_grounded / stats.topics_claimed)."
+        },
+        {
+          "key": "videos_profiled",
+          "group": "Grounding",
+          "label": "Videos with a grounded profile",
+          "value": 8,
+          "display": "8 / 8",
+          "unit": "count",
+          "direction": "higher",
+          "detail": "Playlist videos with at least one grounded topic in result.json profiles, out of all playlist videos."
+        },
+        {
+          "key": "order_constraints_met",
+          "group": "Arrangement",
+          "label": "Order rules satisfied",
+          "value": 1.0,
+          "display": "8 / 8 (100%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of gold before/after rules where the before video sits strictly earlier in the order, and a rule fails if either video is not in the order; 6 of the 8 rules are the single 'framework first' opinion."
+        },
+        {
+          "key": "framework_first",
+          "group": "Arrangement",
+          "label": "Framework video placed first",
+          "value": 1,
+          "display": "yes",
+          "unit": "text",
+          "direction": "higher",
+          "detail": "1 if the gold framework video is the first entry of the order, else 0."
+        },
+        {
+          "key": "order_rules_dependency",
+          "group": "Arrangement",
+          "label": "Dependency order rules satisfied",
+          "value": 1.0,
+          "display": "2 / 2 (100%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of the gold before/after rules not about the framework video (the database-dependency rules only) where the before video sits strictly earlier in the order; a rule fails if either video is not in the order."
+        },
+        {
+          "key": "off_goal_detected",
+          "group": "Arrangement",
+          "label": "Off-topic video set aside",
+          "value": 1,
+          "display": "yes",
+          "unit": "text",
+          "direction": "higher",
+          "detail": "1 if every gold off-goal video is listed in unplaced (or off_goal) and is absent from the order, else 0."
+        },
+        {
+          "key": "off_goal_false_flags",
+          "group": "Arrangement",
+          "label": "Good videos wrongly set aside",
+          "value": 0,
+          "display": "0",
+          "unit": "count",
+          "direction": "lower",
+          "detail": "Number of videos the run set aside (in unplaced or off_goal) that are not gold off-goal videos."
+        },
+        {
+          "key": "order_integrity",
+          "group": "Arrangement",
+          "label": "Videos the code had to repair",
+          "value": 0,
+          "display": "0",
+          "unit": "count",
+          "direction": "lower",
+          "detail": "Number of videos the code had to repair by re-adding them to the end of the order (stats.videos_readded_to_order)."
+        },
+        {
+          "key": "gap_recall",
+          "group": "Coverage",
+          "label": "Expected gaps found",
+          "value": 1.0,
+          "display": "4 / 4 (100%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of gold expected gaps for which some area titled with one of its keywords has status missing or partial (case-insensitive match on the area title)."
+        },
+        {
+          "key": "gap_recall_suggested",
+          "group": "Coverage",
+          "label": "Expected gaps surfaced (areas or suggestions)",
+          "value": 1.0,
+          "display": "4 / 4 (100%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of gold expected gaps found either as a missing/partial area (title match) or because some suggestion has one of the gap's keywords in its topic or search_query (case-insensitive)."
+        },
+        {
+          "key": "extra_gaps_proposed",
+          "group": "Coverage",
+          "label": "Extra gaps proposed beyond the reference",
+          "value": 2,
+          "display": "2",
+          "unit": "count",
+          "direction": "info",
+          "detail": "Number of missing/partial areas whose title matches none of the gold expected-gap keywords; valid extra gaps are not scored as wrong, read them on the page."
+        },
+        {
+          "key": "false_covered",
+          "group": "Coverage",
+          "label": "Gaps wrongly called covered",
+          "value": 0,
+          "display": "0",
+          "unit": "count",
+          "direction": "lower",
+          "detail": "Number of gold expected gaps matched by a covered area while no missing or partial area matches them."
+        },
+        {
+          "key": "covered_recall",
+          "group": "Coverage",
+          "label": "Expected covered topics found",
+          "value": 1.0,
+          "display": "5 / 5 (100%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of gold expected-covered topics matched by a covered or partial area whose covered_by includes the gold video."
+        },
+        {
+          "key": "citation_validity",
+          "group": "Coverage",
+          "label": "Citations that point to real playlist videos",
+          "value": 1.0,
+          "display": "9 / 9 (100%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of covered_by ids, across all areas, that are ids of playlist videos (n/a when nothing is cited)."
+        },
+        {
+          "key": "areas_downgraded",
+          "group": "Coverage",
+          "label": "Areas downgraded to missing",
+          "value": 0,
+          "display": "0",
+          "unit": "count",
+          "direction": "lower",
+          "detail": "Number of covered/partial areas the code changed to missing because they cited no valid video (stats.areas_downgraded_to_missing)."
+        },
+        {
+          "key": "suggestions_with_candidates",
+          "group": "Suggestions",
+          "label": "Suggestions with a real video",
+          "value": 6,
+          "display": "6 / 6",
+          "unit": "count",
+          "direction": "info",
+          "detail": "Number of suggestions that came back with at least one candidate video."
+        },
+        {
+          "key": "candidates_found",
+          "group": "Suggestions",
+          "label": "Real videos found for suggestions",
+          "value": 12,
+          "display": "12 for 6 topics",
+          "unit": "count",
+          "direction": "info",
+          "detail": "stats.candidates_found: the number of real YouTube search results attached to the suggestions."
+        },
+        {
+          "key": "candidate_validity",
+          "group": "Suggestions",
+          "label": "Candidates passing sanity checks",
+          "value": 1.0,
+          "display": "12 / 12 (100%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of all candidates whose id is 11 characters of [A-Za-z0-9_-], whose duration is 120 to 1500 seconds, and which are not already in the playlist."
+        },
+        {
+          "key": "total_tokens",
+          "group": "Burn",
+          "label": "Tokens used",
+          "value": null,
+          "display": "n/a (stand-in)",
+          "unit": "tokens",
+          "direction": "info",
+          "detail": "Prompt + completion tokens as reported by the provider API (totals.total_tokens)."
+        },
+        {
+          "key": "prompt_tokens",
+          "group": "Burn",
+          "label": "Prompt tokens",
+          "value": null,
+          "display": "n/a (stand-in tokens are not comparable)",
+          "unit": "tokens",
+          "direction": "info",
+          "detail": "Tokens sent to the model, summed over all calls (totals.prompt_tokens)."
+        },
+        {
+          "key": "completion_tokens",
+          "group": "Burn",
+          "label": "Completion tokens",
+          "value": null,
+          "display": "n/a (stand-in tokens are not comparable)",
+          "unit": "tokens",
+          "direction": "lower",
+          "detail": "Tokens the model produced, reasoning included, summed over all calls (totals.completion_tokens)."
+        },
+        {
+          "key": "reasoning_tokens",
+          "group": "Burn",
+          "label": "Reasoning tokens",
+          "value": null,
+          "display": "n/a (stand-in tokens are not comparable)",
+          "unit": "tokens",
+          "direction": "lower",
+          "detail": "Hidden reasoning tokens, a part of the completion tokens (totals.reasoning_tokens)."
+        },
+        {
+          "key": "api_calls",
+          "group": "Burn",
+          "label": "API calls",
+          "value": 3,
+          "display": "3",
+          "unit": "count",
+          "direction": "info",
+          "detail": "Number of requests sent to the provider (totals.calls)."
+        },
+        {
+          "key": "wall_seconds",
+          "group": "Burn",
+          "label": "Wall-clock time",
+          "value": 60,
+          "display": "60 s",
+          "unit": "seconds",
+          "direction": "lower",
+          "detail": "Total run time (totals.wall_seconds); agents 2 and 3 ran in parallel."
+        },
+        {
+          "key": "api_seconds",
+          "group": "Burn",
+          "label": "Time inside the API",
+          "value": null,
+          "display": "n/a (stand-in tokens are not comparable)",
+          "unit": "seconds",
+          "direction": "lower",
+          "detail": "Seconds spent inside provider API requests, summed over calls (totals.api_seconds)."
+        },
+        {
+          "key": "waiting_seconds",
+          "group": "Burn",
+          "label": "Time waiting for rate limits",
+          "value": null,
+          "display": "n/a (stand-in tokens are not comparable)",
+          "unit": "seconds",
+          "direction": "lower",
+          "detail": "Seconds spent sleeping for rate limits rather than in the API (totals.waiting_seconds)."
+        },
+        {
+          "key": "tokens_per_second",
+          "group": "Burn",
+          "label": "Output speed",
+          "value": null,
+          "display": "n/a (stand-in tokens are not comparable)",
+          "unit": "tokens",
+          "direction": "info",
+          "detail": "Completion tokens divided by seconds inside the API."
+        }
+      ]
+    },
+    {
+      "label": "gemini-1",
+      "provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "kind": "live",
+      "metrics": [
+        {
+          "key": "grounding_rate",
+          "group": "Grounding",
+          "label": "Topics backed by a transcript quote",
+          "value": 0.88,
+          "display": "22 / 25 (88%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of claimed topics whose quoted evidence was found in the transcript excerpt (stats.topics_grounded / stats.topics_claimed)."
+        },
+        {
+          "key": "videos_profiled",
+          "group": "Grounding",
+          "label": "Videos with a grounded profile",
+          "value": 8,
+          "display": "8 / 8",
+          "unit": "count",
+          "direction": "higher",
+          "detail": "Playlist videos with at least one grounded topic in result.json profiles, out of all playlist videos."
+        },
+        {
+          "key": "order_constraints_met",
+          "group": "Arrangement",
+          "label": "Order rules satisfied",
+          "value": 1.0,
+          "display": "8 / 8 (100%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of gold before/after rules where the before video sits strictly earlier in the order, and a rule fails if either video is not in the order; 6 of the 8 rules are the single 'framework first' opinion."
+        },
+        {
+          "key": "framework_first",
+          "group": "Arrangement",
+          "label": "Framework video placed first",
+          "value": 1,
+          "display": "yes",
+          "unit": "text",
+          "direction": "higher",
+          "detail": "1 if the gold framework video is the first entry of the order, else 0."
+        },
+        {
+          "key": "order_rules_dependency",
+          "group": "Arrangement",
+          "label": "Dependency order rules satisfied",
+          "value": 1.0,
+          "display": "2 / 2 (100%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of the gold before/after rules not about the framework video (the database-dependency rules only) where the before video sits strictly earlier in the order; a rule fails if either video is not in the order."
+        },
+        {
+          "key": "off_goal_detected",
+          "group": "Arrangement",
+          "label": "Off-topic video set aside",
+          "value": 1,
+          "display": "yes",
+          "unit": "text",
+          "direction": "higher",
+          "detail": "1 if every gold off-goal video is listed in unplaced (or off_goal) and is absent from the order, else 0."
+        },
+        {
+          "key": "off_goal_false_flags",
+          "group": "Arrangement",
+          "label": "Good videos wrongly set aside",
+          "value": 0,
+          "display": "0",
+          "unit": "count",
+          "direction": "lower",
+          "detail": "Number of videos the run set aside (in unplaced or off_goal) that are not gold off-goal videos."
+        },
+        {
+          "key": "order_integrity",
+          "group": "Arrangement",
+          "label": "Videos the code had to repair",
+          "value": 0,
+          "display": "0",
+          "unit": "count",
+          "direction": "lower",
+          "detail": "Number of videos the code had to repair by re-adding them to the end of the order (stats.videos_readded_to_order)."
+        },
+        {
+          "key": "gap_recall",
+          "group": "Coverage",
+          "label": "Expected gaps found",
+          "value": 0.75,
+          "display": "3 / 4 (75%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of gold expected gaps for which some area titled with one of its keywords has status missing or partial (case-insensitive match on the area title)."
+        },
+        {
+          "key": "gap_recall_suggested",
+          "group": "Coverage",
+          "label": "Expected gaps surfaced (areas or suggestions)",
+          "value": 0.75,
+          "display": "3 / 4 (75%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of gold expected gaps found either as a missing/partial area (title match) or because some suggestion has one of the gap's keywords in its topic or search_query (case-insensitive)."
+        },
+        {
+          "key": "extra_gaps_proposed",
+          "group": "Coverage",
+          "label": "Extra gaps proposed beyond the reference",
+          "value": 1,
+          "display": "1",
+          "unit": "count",
+          "direction": "info",
+          "detail": "Number of missing/partial areas whose title matches none of the gold expected-gap keywords; valid extra gaps are not scored as wrong, read them on the page."
+        },
+        {
+          "key": "false_covered",
+          "group": "Coverage",
+          "label": "Gaps wrongly called covered",
+          "value": 0,
+          "display": "0",
+          "unit": "count",
+          "direction": "lower",
+          "detail": "Number of gold expected gaps matched by a covered area while no missing or partial area matches them."
+        },
+        {
+          "key": "covered_recall",
+          "group": "Coverage",
+          "label": "Expected covered topics found",
+          "value": 1.0,
+          "display": "5 / 5 (100%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of gold expected-covered topics matched by a covered or partial area whose covered_by includes the gold video."
+        },
+        {
+          "key": "citation_validity",
+          "group": "Coverage",
+          "label": "Citations that point to real playlist videos",
+          "value": 1.0,
+          "display": "7 / 7 (100%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of covered_by ids, across all areas, that are ids of playlist videos (n/a when nothing is cited)."
+        },
+        {
+          "key": "areas_downgraded",
+          "group": "Coverage",
+          "label": "Areas downgraded to missing",
+          "value": 0,
+          "display": "0",
+          "unit": "count",
+          "direction": "lower",
+          "detail": "Number of covered/partial areas the code changed to missing because they cited no valid video (stats.areas_downgraded_to_missing)."
+        },
+        {
+          "key": "suggestions_with_candidates",
+          "group": "Suggestions",
+          "label": "Suggestions with a real video",
+          "value": 3,
+          "display": "3 / 3",
+          "unit": "count",
+          "direction": "info",
+          "detail": "Number of suggestions that came back with at least one candidate video."
+        },
+        {
+          "key": "candidates_found",
+          "group": "Suggestions",
+          "label": "Real videos found for suggestions",
+          "value": 6,
+          "display": "6 for 3 topics",
+          "unit": "count",
+          "direction": "info",
+          "detail": "stats.candidates_found: the number of real YouTube search results attached to the suggestions."
+        },
+        {
+          "key": "candidate_validity",
+          "group": "Suggestions",
+          "label": "Candidates passing sanity checks",
+          "value": 1.0,
+          "display": "6 / 6 (100%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of all candidates whose id is 11 characters of [A-Za-z0-9_-], whose duration is 120 to 1500 seconds, and which are not already in the playlist."
+        },
+        {
+          "key": "total_tokens",
+          "group": "Burn",
+          "label": "Tokens used",
+          "value": 16051,
+          "display": "16,051",
+          "unit": "tokens",
+          "direction": "lower",
+          "detail": "Prompt + completion tokens as reported by the provider API (totals.total_tokens)."
+        },
+        {
+          "key": "prompt_tokens",
+          "group": "Burn",
+          "label": "Prompt tokens",
+          "value": 11966,
+          "display": "11,966",
+          "unit": "tokens",
+          "direction": "info",
+          "detail": "Tokens sent to the model, summed over all calls (totals.prompt_tokens)."
+        },
+        {
+          "key": "completion_tokens",
+          "group": "Burn",
+          "label": "Completion tokens",
+          "value": 4085,
+          "display": "4,085",
+          "unit": "tokens",
+          "direction": "lower",
+          "detail": "Tokens the model produced, reasoning included, summed over all calls (totals.completion_tokens)."
+        },
+        {
+          "key": "reasoning_tokens",
+          "group": "Burn",
+          "label": "Reasoning tokens",
+          "value": 0,
+          "display": "0",
+          "unit": "tokens",
+          "direction": "lower",
+          "detail": "Hidden reasoning tokens, a part of the completion tokens (totals.reasoning_tokens)."
+        },
+        {
+          "key": "api_calls",
+          "group": "Burn",
+          "label": "API calls",
+          "value": 5,
+          "display": "5",
+          "unit": "count",
+          "direction": "info",
+          "detail": "Number of requests sent to the provider (totals.calls)."
+        },
+        {
+          "key": "wall_seconds",
+          "group": "Burn",
+          "label": "Wall-clock time",
+          "value": 14.5,
+          "display": "14.5 s",
+          "unit": "seconds",
+          "direction": "lower",
+          "detail": "Total run time including rate-limit waiting (totals.wall_seconds)."
+        },
+        {
+          "key": "api_seconds",
+          "group": "Burn",
+          "label": "Time inside the API",
+          "value": 14.4,
+          "display": "14.4 s",
+          "unit": "seconds",
+          "direction": "lower",
+          "detail": "Seconds spent inside provider API requests, summed over calls (totals.api_seconds)."
+        },
+        {
+          "key": "waiting_seconds",
+          "group": "Burn",
+          "label": "Time waiting for rate limits",
+          "value": 0.1,
+          "display": "0.1 s",
+          "unit": "seconds",
+          "direction": "lower",
+          "detail": "Seconds spent sleeping for rate limits rather than in the API (totals.waiting_seconds)."
+        },
+        {
+          "key": "tokens_per_second",
+          "group": "Burn",
+          "label": "Output speed",
+          "value": 283.7,
+          "display": "283.7 tokens/s",
+          "unit": "tokens",
+          "direction": "info",
+          "detail": "Completion tokens divided by seconds inside the API."
+        }
+      ]
+    },
+    {
+      "label": "groq-1",
+      "provider": "groq",
+      "model": "openai/gpt-oss-120b",
+      "kind": "live",
+      "metrics": [
+        {
+          "key": "grounding_rate",
+          "group": "Grounding",
+          "label": "Topics backed by a transcript quote",
+          "value": 0.8333,
+          "display": "30 / 36 (83%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of claimed topics whose quoted evidence was found in the transcript excerpt (stats.topics_grounded / stats.topics_claimed)."
+        },
+        {
+          "key": "videos_profiled",
+          "group": "Grounding",
+          "label": "Videos with a grounded profile",
+          "value": 7,
+          "display": "7 / 8",
+          "unit": "count",
+          "direction": "higher",
+          "detail": "Playlist videos with at least one grounded topic in result.json profiles, out of all playlist videos."
+        },
+        {
+          "key": "order_constraints_met",
+          "group": "Arrangement",
+          "label": "Order rules satisfied",
+          "value": 0.375,
+          "display": "3 / 8 (38%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of gold before/after rules where the before video sits strictly earlier in the order, and a rule fails if either video is not in the order; 6 of the 8 rules are the single 'framework first' opinion."
+        },
+        {
+          "key": "framework_first",
+          "group": "Arrangement",
+          "label": "Framework video placed first",
+          "value": 0,
+          "display": "no",
+          "unit": "text",
+          "direction": "higher",
+          "detail": "1 if the gold framework video is the first entry of the order, else 0."
+        },
+        {
+          "key": "order_rules_dependency",
+          "group": "Arrangement",
+          "label": "Dependency order rules satisfied",
+          "value": 0.5,
+          "display": "1 / 2 (50%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of the gold before/after rules not about the framework video (the database-dependency rules only) where the before video sits strictly earlier in the order; a rule fails if either video is not in the order."
+        },
+        {
+          "key": "off_goal_detected",
+          "group": "Arrangement",
+          "label": "Off-topic video set aside",
+          "value": 1,
+          "display": "yes",
+          "unit": "text",
+          "direction": "higher",
+          "detail": "1 if every gold off-goal video is listed in unplaced (or off_goal) and is absent from the order, else 0."
+        },
+        {
+          "key": "off_goal_false_flags",
+          "group": "Arrangement",
+          "label": "Good videos wrongly set aside",
+          "value": 0,
+          "display": "0",
+          "unit": "count",
+          "direction": "lower",
+          "detail": "Number of videos the run set aside (in unplaced or off_goal) that are not gold off-goal videos."
+        },
+        {
+          "key": "order_integrity",
+          "group": "Arrangement",
+          "label": "Videos the code had to repair",
+          "value": 0,
+          "display": "0",
+          "unit": "count",
+          "direction": "lower",
+          "detail": "Number of videos the code had to repair by re-adding them to the end of the order (stats.videos_readded_to_order)."
+        },
+        {
+          "key": "gap_recall",
+          "group": "Coverage",
+          "label": "Expected gaps found",
+          "value": 0.0,
+          "display": "0 / 4 (0%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of gold expected gaps for which some area titled with one of its keywords has status missing or partial (case-insensitive match on the area title)."
+        },
+        {
+          "key": "gap_recall_suggested",
+          "group": "Coverage",
+          "label": "Expected gaps surfaced (areas or suggestions)",
+          "value": 0.25,
+          "display": "1 / 4 (25%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of gold expected gaps found either as a missing/partial area (title match) or because some suggestion has one of the gap's keywords in its topic or search_query (case-insensitive)."
+        },
+        {
+          "key": "extra_gaps_proposed",
+          "group": "Coverage",
+          "label": "Extra gaps proposed beyond the reference",
+          "value": 3,
+          "display": "3",
+          "unit": "count",
+          "direction": "info",
+          "detail": "Number of missing/partial areas whose title matches none of the gold expected-gap keywords; valid extra gaps are not scored as wrong, read them on the page."
+        },
+        {
+          "key": "false_covered",
+          "group": "Coverage",
+          "label": "Gaps wrongly called covered",
+          "value": 0,
+          "display": "0",
+          "unit": "count",
+          "direction": "lower",
+          "detail": "Number of gold expected gaps matched by a covered area while no missing or partial area matches them."
+        },
+        {
+          "key": "covered_recall",
+          "group": "Coverage",
+          "label": "Expected covered topics found",
+          "value": 1.0,
+          "display": "5 / 5 (100%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of gold expected-covered topics matched by a covered or partial area whose covered_by includes the gold video."
+        },
+        {
+          "key": "citation_validity",
+          "group": "Coverage",
+          "label": "Citations that point to real playlist videos",
+          "value": 1.0,
+          "display": "7 / 7 (100%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of covered_by ids, across all areas, that are ids of playlist videos (n/a when nothing is cited)."
+        },
+        {
+          "key": "areas_downgraded",
+          "group": "Coverage",
+          "label": "Areas downgraded to missing",
+          "value": 1,
+          "display": "1",
+          "unit": "count",
+          "direction": "lower",
+          "detail": "Number of covered/partial areas the code changed to missing because they cited no valid video (stats.areas_downgraded_to_missing)."
+        },
+        {
+          "key": "suggestions_with_candidates",
+          "group": "Suggestions",
+          "label": "Suggestions with a real video",
+          "value": 6,
+          "display": "6 / 6",
+          "unit": "count",
+          "direction": "info",
+          "detail": "Number of suggestions that came back with at least one candidate video."
+        },
+        {
+          "key": "candidates_found",
+          "group": "Suggestions",
+          "label": "Real videos found for suggestions",
+          "value": 12,
+          "display": "12 for 6 topics",
+          "unit": "count",
+          "direction": "info",
+          "detail": "stats.candidates_found: the number of real YouTube search results attached to the suggestions."
+        },
+        {
+          "key": "candidate_validity",
+          "group": "Suggestions",
+          "label": "Candidates passing sanity checks",
+          "value": 1.0,
+          "display": "12 / 12 (100%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of all candidates whose id is 11 characters of [A-Za-z0-9_-], whose duration is 120 to 1500 seconds, and which are not already in the playlist."
+        },
+        {
+          "key": "total_tokens",
+          "group": "Burn",
+          "label": "Tokens used",
+          "value": 14472,
+          "display": "14,472",
+          "unit": "tokens",
+          "direction": "lower",
+          "detail": "Prompt + completion tokens as reported by the provider API (totals.total_tokens)."
+        },
+        {
+          "key": "prompt_tokens",
+          "group": "Burn",
+          "label": "Prompt tokens",
+          "value": 10980,
+          "display": "10,980",
+          "unit": "tokens",
+          "direction": "info",
+          "detail": "Tokens sent to the model, summed over all calls (totals.prompt_tokens)."
+        },
+        {
+          "key": "completion_tokens",
+          "group": "Burn",
+          "label": "Completion tokens",
+          "value": 3492,
+          "display": "3,492",
+          "unit": "tokens",
+          "direction": "lower",
+          "detail": "Tokens the model produced, reasoning included, summed over all calls (totals.completion_tokens)."
+        },
+        {
+          "key": "reasoning_tokens",
+          "group": "Burn",
+          "label": "Reasoning tokens",
+          "value": 1441,
+          "display": "1,441",
+          "unit": "tokens",
+          "direction": "lower",
+          "detail": "Hidden reasoning tokens, a part of the completion tokens (totals.reasoning_tokens)."
+        },
+        {
+          "key": "api_calls",
+          "group": "Burn",
+          "label": "API calls",
+          "value": 6,
+          "display": "6",
+          "unit": "count",
+          "direction": "info",
+          "detail": "Number of requests sent to the provider (totals.calls)."
+        },
+        {
+          "key": "wall_seconds",
+          "group": "Burn",
+          "label": "Wall-clock time",
+          "value": 313.7,
+          "display": "313.7 s",
+          "unit": "seconds",
+          "direction": "lower",
+          "detail": "Total run time including rate-limit waiting (totals.wall_seconds)."
+        },
+        {
+          "key": "api_seconds",
+          "group": "Burn",
+          "label": "Time inside the API",
+          "value": 11.2,
+          "display": "11.2 s",
+          "unit": "seconds",
+          "direction": "lower",
+          "detail": "Seconds spent inside provider API requests, summed over calls (totals.api_seconds)."
+        },
+        {
+          "key": "waiting_seconds",
+          "group": "Burn",
+          "label": "Time waiting for rate limits",
+          "value": 302.5,
+          "display": "302.5 s",
+          "unit": "seconds",
+          "direction": "lower",
+          "detail": "Seconds spent sleeping for rate limits rather than in the API (totals.waiting_seconds)."
+        },
+        {
+          "key": "tokens_per_second",
+          "group": "Burn",
+          "label": "Output speed",
+          "value": 311.8,
+          "display": "311.8 tokens/s",
+          "unit": "tokens",
+          "direction": "info",
+          "detail": "Completion tokens divided by seconds inside the API."
+        }
+      ]
+    },
+    {
+      "label": "groq-2",
+      "provider": "groq",
+      "model": "openai/gpt-oss-120b",
+      "kind": "live",
+      "metrics": [
+        {
+          "key": "grounding_rate",
+          "group": "Grounding",
+          "label": "Topics backed by a transcript quote",
+          "value": 0.6765,
+          "display": "23 / 34 (68%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of claimed topics whose quoted evidence was found in the transcript excerpt (stats.topics_grounded / stats.topics_claimed)."
+        },
+        {
+          "key": "videos_profiled",
+          "group": "Grounding",
+          "label": "Videos with a grounded profile",
+          "value": 7,
+          "display": "7 / 8",
+          "unit": "count",
+          "direction": "higher",
+          "detail": "Playlist videos with at least one grounded topic in result.json profiles, out of all playlist videos."
+        },
+        {
+          "key": "order_constraints_met",
+          "group": "Arrangement",
+          "label": "Order rules satisfied",
+          "value": 0.5,
+          "display": "4 / 8 (50%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of gold before/after rules where the before video sits strictly earlier in the order, and a rule fails if either video is not in the order; 6 of the 8 rules are the single 'framework first' opinion."
+        },
+        {
+          "key": "framework_first",
+          "group": "Arrangement",
+          "label": "Framework video placed first",
+          "value": 0,
+          "display": "no",
+          "unit": "text",
+          "direction": "higher",
+          "detail": "1 if the gold framework video is the first entry of the order, else 0."
+        },
+        {
+          "key": "order_rules_dependency",
+          "group": "Arrangement",
+          "label": "Dependency order rules satisfied",
+          "value": 0.5,
+          "display": "1 / 2 (50%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of the gold before/after rules not about the framework video (the database-dependency rules only) where the before video sits strictly earlier in the order; a rule fails if either video is not in the order."
+        },
+        {
+          "key": "off_goal_detected",
+          "group": "Arrangement",
+          "label": "Off-topic video set aside",
+          "value": 1,
+          "display": "yes",
+          "unit": "text",
+          "direction": "higher",
+          "detail": "1 if every gold off-goal video is listed in unplaced (or off_goal) and is absent from the order, else 0."
+        },
+        {
+          "key": "off_goal_false_flags",
+          "group": "Arrangement",
+          "label": "Good videos wrongly set aside",
+          "value": 1,
+          "display": "1",
+          "unit": "count",
+          "direction": "lower",
+          "detail": "Number of videos the run set aside (in unplaced or off_goal) that are not gold off-goal videos."
+        },
+        {
+          "key": "order_integrity",
+          "group": "Arrangement",
+          "label": "Videos the code had to repair",
+          "value": 0,
+          "display": "0",
+          "unit": "count",
+          "direction": "lower",
+          "detail": "Number of videos the code had to repair by re-adding them to the end of the order (stats.videos_readded_to_order)."
+        },
+        {
+          "key": "gap_recall",
+          "group": "Coverage",
+          "label": "Expected gaps found",
+          "value": 0.0,
+          "display": "0 / 4 (0%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of gold expected gaps for which some area titled with one of its keywords has status missing or partial (case-insensitive match on the area title)."
+        },
+        {
+          "key": "gap_recall_suggested",
+          "group": "Coverage",
+          "label": "Expected gaps surfaced (areas or suggestions)",
+          "value": 0.0,
+          "display": "0 / 4 (0%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of gold expected gaps found either as a missing/partial area (title match) or because some suggestion has one of the gap's keywords in its topic or search_query (case-insensitive)."
+        },
+        {
+          "key": "extra_gaps_proposed",
+          "group": "Coverage",
+          "label": "Extra gaps proposed beyond the reference",
+          "value": 7,
+          "display": "7",
+          "unit": "count",
+          "direction": "info",
+          "detail": "Number of missing/partial areas whose title matches none of the gold expected-gap keywords; valid extra gaps are not scored as wrong, read them on the page."
+        },
+        {
+          "key": "false_covered",
+          "group": "Coverage",
+          "label": "Gaps wrongly called covered",
+          "value": 0,
+          "display": "0",
+          "unit": "count",
+          "direction": "lower",
+          "detail": "Number of gold expected gaps matched by a covered area while no missing or partial area matches them."
+        },
+        {
+          "key": "covered_recall",
+          "group": "Coverage",
+          "label": "Expected covered topics found",
+          "value": 1.0,
+          "display": "5 / 5 (100%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of gold expected-covered topics matched by a covered or partial area whose covered_by includes the gold video."
+        },
+        {
+          "key": "citation_validity",
+          "group": "Coverage",
+          "label": "Citations that point to real playlist videos",
+          "value": 1.0,
+          "display": "8 / 8 (100%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of covered_by ids, across all areas, that are ids of playlist videos (n/a when nothing is cited)."
+        },
+        {
+          "key": "areas_downgraded",
+          "group": "Coverage",
+          "label": "Areas downgraded to missing",
+          "value": 0,
+          "display": "0",
+          "unit": "count",
+          "direction": "lower",
+          "detail": "Number of covered/partial areas the code changed to missing because they cited no valid video (stats.areas_downgraded_to_missing)."
+        },
+        {
+          "key": "suggestions_with_candidates",
+          "group": "Suggestions",
+          "label": "Suggestions with a real video",
+          "value": 6,
+          "display": "6 / 6",
+          "unit": "count",
+          "direction": "info",
+          "detail": "Number of suggestions that came back with at least one candidate video."
+        },
+        {
+          "key": "candidates_found",
+          "group": "Suggestions",
+          "label": "Real videos found for suggestions",
+          "value": 12,
+          "display": "12 for 6 topics",
+          "unit": "count",
+          "direction": "info",
+          "detail": "stats.candidates_found: the number of real YouTube search results attached to the suggestions."
+        },
+        {
+          "key": "candidate_validity",
+          "group": "Suggestions",
+          "label": "Candidates passing sanity checks",
+          "value": 1.0,
+          "display": "12 / 12 (100%)",
+          "unit": "ratio",
+          "direction": "higher",
+          "detail": "Share of all candidates whose id is 11 characters of [A-Za-z0-9_-], whose duration is 120 to 1500 seconds, and which are not already in the playlist."
+        },
+        {
+          "key": "total_tokens",
+          "group": "Burn",
+          "label": "Tokens used",
+          "value": 14159,
+          "display": "14,159",
+          "unit": "tokens",
+          "direction": "lower",
+          "detail": "Prompt + completion tokens as reported by the provider API (totals.total_tokens)."
+        },
+        {
+          "key": "prompt_tokens",
+          "group": "Burn",
+          "label": "Prompt tokens",
+          "value": 10928,
+          "display": "10,928",
+          "unit": "tokens",
+          "direction": "info",
+          "detail": "Tokens sent to the model, summed over all calls (totals.prompt_tokens)."
+        },
+        {
+          "key": "completion_tokens",
+          "group": "Burn",
+          "label": "Completion tokens",
+          "value": 3231,
+          "display": "3,231",
+          "unit": "tokens",
+          "direction": "lower",
+          "detail": "Tokens the model produced, reasoning included, summed over all calls (totals.completion_tokens)."
+        },
+        {
+          "key": "reasoning_tokens",
+          "group": "Burn",
+          "label": "Reasoning tokens",
+          "value": 1058,
+          "display": "1,058",
+          "unit": "tokens",
+          "direction": "lower",
+          "detail": "Hidden reasoning tokens, a part of the completion tokens (totals.reasoning_tokens)."
+        },
+        {
+          "key": "api_calls",
+          "group": "Burn",
+          "label": "API calls",
+          "value": 6,
+          "display": "6",
+          "unit": "count",
+          "direction": "info",
+          "detail": "Number of requests sent to the provider (totals.calls)."
+        },
+        {
+          "key": "wall_seconds",
+          "group": "Burn",
+          "label": "Wall-clock time",
+          "value": 312.9,
+          "display": "312.9 s",
+          "unit": "seconds",
+          "direction": "lower",
+          "detail": "Total run time including rate-limit waiting (totals.wall_seconds)."
+        },
+        {
+          "key": "api_seconds",
+          "group": "Burn",
+          "label": "Time inside the API",
+          "value": 10.4,
+          "display": "10.4 s",
+          "unit": "seconds",
+          "direction": "lower",
+          "detail": "Seconds spent inside provider API requests, summed over calls (totals.api_seconds)."
+        },
+        {
+          "key": "waiting_seconds",
+          "group": "Burn",
+          "label": "Time waiting for rate limits",
+          "value": 302.5,
+          "display": "302.5 s",
+          "unit": "seconds",
+          "direction": "lower",
+          "detail": "Seconds spent sleeping for rate limits rather than in the API (totals.waiting_seconds)."
+        },
+        {
+          "key": "tokens_per_second",
+          "group": "Burn",
+          "label": "Output speed",
+          "value": 310.7,
+          "display": "310.7 tokens/s",
+          "unit": "tokens",
+          "direction": "info",
+          "detail": "Completion tokens divided by seconds inside the API."
+        }
+      ]
+    }
+  ],
+  "comparisons": [
+    {
+      "a": "claude-standin",
+      "b": "gemini-1",
+      "key": "order_kendall_tau",
+      "group": "Agreement",
+      "label": "Order agreement (Kendall tau)",
+      "value": 0.4286,
+      "display": "0.43",
+      "detail": "Kendall tau-a between the orders of two runs over the videos both placed: 1 means identical order, -1 reversed."
+    },
+    {
+      "a": "claude-standin",
+      "b": "gemini-1",
+      "key": "off_goal_agreement",
+      "group": "Agreement",
+      "label": "Same videos set aside",
+      "value": 1,
+      "display": "yes",
+      "detail": "1 if two runs set aside exactly the same videos (unplaced or off-goal), else 0."
+    },
+    {
+      "a": "claude-standin",
+      "b": "groq-1",
+      "key": "order_kendall_tau",
+      "group": "Agreement",
+      "label": "Order agreement (Kendall tau)",
+      "value": 0.0476,
+      "display": "0.05",
+      "detail": "Kendall tau-a between the orders of two runs over the videos both placed: 1 means identical order, -1 reversed."
+    },
+    {
+      "a": "claude-standin",
+      "b": "groq-1",
+      "key": "off_goal_agreement",
+      "group": "Agreement",
+      "label": "Same videos set aside",
+      "value": 1,
+      "display": "yes",
+      "detail": "1 if two runs set aside exactly the same videos (unplaced or off-goal), else 0."
+    },
+    {
+      "a": "claude-standin",
+      "b": "groq-2",
+      "key": "order_kendall_tau",
+      "group": "Agreement",
+      "label": "Order agreement (Kendall tau)",
+      "value": 0.0476,
+      "display": "0.05",
+      "detail": "Kendall tau-a between the orders of two runs over the videos both placed: 1 means identical order, -1 reversed."
+    },
+    {
+      "a": "claude-standin",
+      "b": "groq-2",
+      "key": "off_goal_agreement",
+      "group": "Agreement",
+      "label": "Same videos set aside",
+      "value": 0,
+      "display": "no",
+      "detail": "1 if two runs set aside exactly the same videos (unplaced or off-goal), else 0."
+    },
+    {
+      "a": "gemini-1",
+      "b": "groq-1",
+      "key": "order_kendall_tau",
+      "group": "Agreement",
+      "label": "Order agreement (Kendall tau)",
+      "value": 0.0476,
+      "display": "0.05",
+      "detail": "Kendall tau-a between the orders of two runs over the videos both placed: 1 means identical order, -1 reversed."
+    },
+    {
+      "a": "gemini-1",
+      "b": "groq-1",
+      "key": "off_goal_agreement",
+      "group": "Agreement",
+      "label": "Same videos set aside",
+      "value": 1,
+      "display": "yes",
+      "detail": "1 if two runs set aside exactly the same videos (unplaced or off-goal), else 0."
+    },
+    {
+      "a": "gemini-1",
+      "b": "groq-2",
+      "key": "order_kendall_tau",
+      "group": "Agreement",
+      "label": "Order agreement (Kendall tau)",
+      "value": 0.2381,
+      "display": "0.24",
+      "detail": "Kendall tau-a between the orders of two runs over the videos both placed: 1 means identical order, -1 reversed."
+    },
+    {
+      "a": "gemini-1",
+      "b": "groq-2",
+      "key": "off_goal_agreement",
+      "group": "Agreement",
+      "label": "Same videos set aside",
+      "value": 0,
+      "display": "no",
+      "detail": "1 if two runs set aside exactly the same videos (unplaced or off-goal), else 0."
+    },
+    {
+      "a": "groq-1",
+      "b": "groq-2",
+      "key": "order_kendall_tau",
+      "group": "Agreement",
+      "label": "Order agreement (Kendall tau)",
+      "value": 0.8095,
+      "display": "0.81",
+      "detail": "Kendall tau-a between the orders of two runs over the videos both placed: 1 means identical order, -1 reversed."
+    },
+    {
+      "a": "groq-1",
+      "b": "groq-2",
+      "key": "off_goal_agreement",
+      "group": "Agreement",
+      "label": "Same videos set aside",
+      "value": 0,
+      "display": "no",
+      "detail": "1 if two runs set aside exactly the same videos (unplaced or off-goal), else 0."
+    },
+    {
+      "a": "groq-1",
+      "b": "groq-2",
+      "key": "stability_order_kendall_tau",
+      "group": "Stability",
+      "label": "Order stability (Kendall tau)",
+      "value": 0.8095,
+      "display": "0.81",
+      "detail": "Kendall tau-a between the orders of two runs of the same model over the videos both placed: 1 means identical order, -1 reversed."
+    },
+    {
+      "a": "groq-1",
+      "b": "groq-2",
+      "key": "stability_off_goal_agreement",
+      "group": "Stability",
+      "label": "Same videos set aside",
+      "value": 0,
+      "display": "no",
+      "detail": "1 if two runs of the same model set aside exactly the same videos (unplaced or off-goal), else 0."
+    }
+  ]
+}

@@ -1,0 +1,515 @@
+{
+  "goal": "System Design Interview Prep",
+  "profiles": {
+    "wh98s0XhMmQ": {
+      "level": "intermediate",
+      "summary": "Explains what caching is and then walks through common caching problems such as cache stampede and cache penetration, with ways to mitigate them.",
+      "topics": [
+        {
+          "name": "Caching basics",
+          "evidence": "a memory layer that stores copies of frequently accessed data"
+        },
+        {
+          "name": "Cache stampede",
+          "evidence": "many requests simultaneously hit the same expired cache entry"
+        },
+        {
+          "name": "Cache penetration",
+          "evidence": "implement a placeholder value for non-existent keys"
+        },
+        {
+          "name": "Bloom filters",
+          "evidence": "bloom filters, a space-efficient probabilistic data structure"
+        },
+        {
+          "name": "Cache prewarming",
+          "evidence": "essential data is proactively populated in the cold cache"
+        }
+      ],
+      "prerequisites": [
+        "Databases",
+        "Redis basics"
+      ]
+    },
+    "XP98YCr-iXQ": {
+      "level": "intermediate",
+      "summary": "Introduces database sharding, the main sharding methods, and how to choose a good shard key.",
+      "topics": [
+        {
+          "name": "Database sharding",
+          "evidence": "splitting a large database into smaller pieces, which we call shards"
+        },
+        {
+          "name": "Hashed sharding",
+          "evidence": "we use a mathematical formula and apply it to each row"
+        },
+        {
+          "name": "Directory sharding",
+          "evidence": "uses a lookup table to decide where to store the record"
+        },
+        {
+          "name": "Shard key selection",
+          "evidence": "Good shard-key selection can evenly distribute data across multiple shards."
+        },
+        {
+          "name": "Shard key cardinality",
+          "evidence": "Which we also call cardinality."
+        }
+      ],
+      "prerequisites": [
+        "Databases",
+        "Horizontal scaling"
+      ]
+    },
+    "BHqjEjzAicA": {
+      "level": "intermediate",
+      "summary": "Explains the CAP theorem trade-offs between consistency and availability during a network partition, using bank and social media examples.",
+      "topics": [
+        {
+          "name": "CAP theorem",
+          "evidence": "The CAP theorem is a concept in computer science"
+        },
+        {
+          "name": "Network partition",
+          "evidence": "nodes in a distributed system are unable to communicate with each other"
+        },
+        {
+          "name": "Consistency vs availability",
+          "evidence": "a system must choose between consistency and availability"
+        },
+        {
+          "name": "Partition reconciliation",
+          "evidence": "reconciliation after a network partition could get very messy"
+        },
+        {
+          "name": "PACELC theorem",
+          "evidence": "This is covered by the PACELC theorem"
+        }
+      ],
+      "prerequisites": [
+        "Distributed systems"
+      ]
+    },
+    "U-G-mSd4KAE": {
+      "level": "beginner",
+      "summary": "Teaches how to write and apply Python decorators using an ice cream function example.",
+      "topics": [
+        {
+          "name": "Python decorators",
+          "evidence": "A decorator is a function that extends the behavior of another function"
+        },
+        {
+          "name": "Wrapper functions",
+          "evidence": "we have a nested function of wrapper within our decorator"
+        },
+        {
+          "name": "Arguments and kwargs",
+          "evidence": "any number of arguments and keyword arguments"
+        },
+        {
+          "name": "Applying decorators",
+          "evidence": "you preede that function when you define it"
+        }
+      ],
+      "prerequisites": [
+        "Python functions",
+        "Function arguments"
+      ]
+    },
+    "i7twT3x5yv8": {
+      "level": "beginner",
+      "summary": "Presents a four-step framework for approaching a system design interview, from scoping through deep dive and wrap-up.",
+      "topics": [
+        {
+          "name": "Interview framework",
+          "evidence": "Here are the 4 steps in our framework."
+        },
+        {
+          "name": "Establishing design scope",
+          "evidence": "Step 1 - Understand the problem and establish design scope."
+        },
+        {
+          "name": "High-level design diagram",
+          "evidence": "the next step is to lay out the high-level design diagram"
+        },
+        {
+          "name": "WebSocket considerations",
+          "evidence": "a socket service like websocket is stateful"
+        },
+        {
+          "name": "Deep dive trade-offs",
+          "evidence": "we discuss the trade-offs of the solutions"
+        }
+      ],
+      "prerequisites": [
+        "Basic system components"
+      ]
+    },
+    "_gQaygjm_hg": {
+      "level": "intermediate",
+      "summary": "Gives seven tips for designing good RESTful APIs, covering naming, idempotency, pagination, sorting and rate limiting (the excerpt is in Arabic).",
+      "topics": [
+        {
+          "name": "Sorting query strings",
+          "evidence": "sort = registered"
+        }
+      ],
+      "prerequisites": [
+        "REST basics",
+        "HTTP methods"
+      ]
+    },
+    "sCR3SAVdyCc": {
+      "level": "beginner",
+      "summary": "Explains what a network load balancer is and how simple and smart algorithms like round robin and random select distribute traffic across application servers.",
+      "topics": [
+        {
+          "name": "Network load balancer",
+          "evidence": "what is a network load balancer"
+        },
+        {
+          "name": "Traffic distribution",
+          "evidence": "decide which application server gets the traffic"
+        },
+        {
+          "name": "Round robin",
+          "evidence": "an algorithm called Round Robin"
+        },
+        {
+          "name": "Random select",
+          "evidence": "is a random select"
+        },
+        {
+          "name": "Shared database tier",
+          "evidence": "talk to a common database tier"
+        }
+      ],
+      "prerequisites": [
+        "Client-server basics"
+      ]
+    },
+    "_Ss42Vb1SU4": {
+      "level": "beginner",
+      "summary": "Compares SQL and NoSQL databases, their strengths and weaknesses, to help choose a database in a system design interview.",
+      "topics": [
+        {
+          "name": "SQL vs NoSQL",
+          "evidence": "SQL databases are table-based, while NoSQL are document,"
+        },
+        {
+          "name": "Scaling differences",
+          "evidence": "SQL databases are vertically scalable, while NoSQL databases are horizontally scalable."
+        },
+        {
+          "name": "ACID compliance",
+          "evidence": "SQL databases are ACID-compliant."
+        },
+        {
+          "name": "Peer-to-peer replication",
+          "evidence": "This is called peer-to-peer replication."
+        },
+        {
+          "name": "Eventual consistency",
+          "evidence": "is called eventual consistency"
+        }
+      ],
+      "prerequisites": [
+        "Database basics"
+      ]
+    }
+  },
+  "order": [
+    {
+      "video_id": "i7twT3x5yv8",
+      "reason": "Gives the four-step interview framework that frames how every later topic is used."
+    },
+    {
+      "video_id": "_gQaygjm_hg",
+      "reason": "Covers RESTful API design tips such as idempotency, pagination and rate limiting that feed the high-level design step."
+    },
+    {
+      "video_id": "sCR3SAVdyCc",
+      "reason": "Introduces load balancers and how traffic is spread across servers, a core scaling building block."
+    },
+    {
+      "video_id": "_Ss42Vb1SU4",
+      "reason": "Compares SQL and NoSQL so you can choose a database, which sharding and caching build on."
+    },
+    {
+      "video_id": "XP98YCr-iXQ",
+      "reason": "Teaches sharding methods and shard key choice for scaling the database tier horizontally."
+    },
+    {
+      "video_id": "wh98s0XhMmQ",
+      "reason": "Explains caching and its pitfalls like stampede and penetration, building on database knowledge."
+    },
+    {
+      "video_id": "BHqjEjzAicA",
+      "reason": "Covers CAP theorem trade-offs, a distributed-systems concept best tackled after the scaling topics."
+    }
+  ],
+  "unplaced": [
+    {
+      "video_id": "U-G-mSd4KAE",
+      "reason": "Teaches Python decorators, which has nothing to do with system design interviews."
+    }
+  ],
+  "path_summary": "Start with the interview framework, then API and load balancing basics, then databases, sharding and caching, and finish with CAP theorem trade-offs.",
+  "areas": [
+    {
+      "area": "Interview framework and scoping",
+      "why": "A structured approach (scope, high-level design, deep dive, wrap-up) keeps the interview on track.",
+      "status": "covered",
+      "covered_by": [
+        "i7twT3x5yv8"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "Requirements and back-of-the-envelope estimation",
+      "why": "Estimating traffic, storage and bandwidth drives every sizing decision in a design.",
+      "status": "partial",
+      "covered_by": [
+        "i7twT3x5yv8"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "Load balancing and horizontal scaling",
+      "why": "Spreading traffic across servers is the first step to scaling and availability.",
+      "status": "covered",
+      "covered_by": [
+        "sCR3SAVdyCc"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "Choosing a database (SQL vs NoSQL)",
+      "why": "Picking the right data store and justifying the trade-offs is asked in almost every design.",
+      "status": "covered",
+      "covered_by": [
+        "_Ss42Vb1SU4"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "Caching strategies and failure modes",
+      "why": "Caching cuts latency and load, but stampedes and penetration must be handled.",
+      "status": "covered",
+      "covered_by": [
+        "wh98s0XhMmQ"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "Database sharding and partitioning",
+      "why": "Splitting data across nodes is how large systems scale writes and storage.",
+      "status": "covered",
+      "covered_by": [
+        "XP98YCr-iXQ"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "Replication, consistency and CAP trade-offs",
+      "why": "Distributed designs must reason about consistency versus availability under partitions.",
+      "status": "covered",
+      "covered_by": [
+        "BHqjEjzAicA",
+        "_Ss42Vb1SU4"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "API design",
+      "why": "Clean, scalable interfaces (naming, idempotency, pagination) are part of most designs.",
+      "status": "partial",
+      "covered_by": [
+        "_gQaygjm_hg"
+      ],
+      "priority": "medium"
+    },
+    {
+      "area": "Message queues and asynchronous processing",
+      "why": "Queues decouple services and absorb traffic spikes.",
+      "status": "missing",
+      "covered_by": [],
+      "priority": "high"
+    },
+    {
+      "area": "Rate limiting and reliability patterns",
+      "why": "Protecting services from overload and failures is a common deep-dive topic.",
+      "status": "missing",
+      "covered_by": [],
+      "priority": "medium"
+    },
+    {
+      "area": "CDN and content delivery",
+      "why": "Serving static and media content near users reduces latency and origin load.",
+      "status": "missing",
+      "covered_by": [],
+      "priority": "medium"
+    },
+    {
+      "area": "Worked case studies (e.g. URL shortener, news feed, chat)",
+      "why": "Practicing full end-to-end designs ties all the components together.",
+      "status": "missing",
+      "covered_by": [],
+      "priority": "high"
+    }
+  ],
+  "suggestions": [
+    {
+      "topic": "Message queues and asynchronous processing",
+      "reason": "High-priority component with no coverage in the playlist.",
+      "kind": "overview",
+      "search_query": "message queue explained system design Kafka RabbitMQ",
+      "candidates": [
+        {
+          "id": "DYFocSiPOl8",
+          "duration_sec": 271,
+          "channel": "Hayk Simonyan",
+          "title": "Message Queues in System Design",
+          "url": "https://www.youtube.com/watch?v=DYFocSiPOl8"
+        },
+        {
+          "id": "1HOVtQ-_fcE",
+          "duration_sec": 656,
+          "channel": "Hello Interview",
+          "title": "Kafka vs RabbitMQ",
+          "url": "https://www.youtube.com/watch?v=1HOVtQ-_fcE"
+        }
+      ]
+    },
+    {
+      "topic": "Worked case studies",
+      "reason": "Applying the framework to full designs is the best interview practice.",
+      "kind": "practice",
+      "search_query": "system design interview design a URL shortener walkthrough",
+      "candidates": [
+        {
+          "id": "9csfoQK2T8g",
+          "duration_sec": 1026,
+          "channel": "Engineering Digest",
+          "title": "URL shortener system design in Hindi | Tinyurl system design in Hindi | Bitly system design in Hindi",
+          "url": "https://www.youtube.com/watch?v=9csfoQK2T8g"
+        },
+        {
+          "id": "16d35un5a9Q",
+          "duration_sec": 805,
+          "channel": "Hayk Simonyan",
+          "title": "System Design Interview Question: Design URL Shortener",
+          "url": "https://www.youtube.com/watch?v=16d35un5a9Q"
+        }
+      ]
+    },
+    {
+      "topic": "Back-of-the-envelope estimation",
+      "reason": "Capacity estimation is only touched on through scoping and is needed to size designs.",
+      "kind": "deep-dive",
+      "search_query": "back of the envelope estimation system design interview",
+      "candidates": [
+        {
+          "id": "UC5xf8FbdJc",
+          "duration_sec": 512,
+          "channel": "ByteByteGo",
+          "title": "Back-Of-The-Envelope Estimation / Capacity Planning",
+          "url": "https://www.youtube.com/watch?v=UC5xf8FbdJc"
+        },
+        {
+          "id": "DwqTon7ZS_s",
+          "duration_sec": 1000,
+          "channel": "Piyush Garg",
+          "title": "Back of Envelope Calculation - System Design Concept",
+          "url": "https://www.youtube.com/watch?v=DwqTon7ZS_s"
+        }
+      ]
+    },
+    {
+      "topic": "Rate limiting and reliability patterns",
+      "reason": "Common follow-up topic with no coverage so far.",
+      "kind": "deep-dive",
+      "search_query": "rate limiter system design token bucket explained",
+      "candidates": [
+        {
+          "id": "YXkOdWBwqaA",
+          "duration_sec": 466,
+          "channel": "ByteByteGo",
+          "title": "Rate Limiter System Design: Token Bucket, Leaky Bucket, Scaling",
+          "url": "https://www.youtube.com/watch?v=YXkOdWBwqaA"
+        },
+        {
+          "id": "oMWWlQfnMlQ",
+          "duration_sec": 1184,
+          "channel": "Learn Code With Durgesh",
+          "title": "How Rate Limiting Works | Token Bucket Algorithm Explained | Crack Interviews | Java Backend",
+          "url": "https://www.youtube.com/watch?v=oMWWlQfnMlQ"
+        }
+      ]
+    },
+    {
+      "topic": "CDN and content delivery",
+      "reason": "Key for latency and scaling static content, currently missing.",
+      "kind": "overview",
+      "search_query": "what is a CDN content delivery network system design",
+      "candidates": [
+        {
+          "id": "ouqqU0FJjhQ",
+          "duration_sec": 353,
+          "channel": "Gate Smashers",
+          "title": "Lec-4 : Content Delivery Network (CDN) | How it works",
+          "url": "https://www.youtube.com/watch?v=ouqqU0FJjhQ"
+        },
+        {
+          "id": "RI9np1LWzqw",
+          "duration_sec": 264,
+          "channel": "ByteByteGo",
+          "title": "What Is A CDN? How Does It Work?",
+          "url": "https://www.youtube.com/watch?v=RI9np1LWzqw"
+        }
+      ]
+    },
+    {
+      "topic": "API design",
+      "reason": "Only a small part of the API design video is captured, so core API concepts remain thin.",
+      "kind": "deep-dive",
+      "search_query": "REST API design best practices pagination idempotency",
+      "candidates": [
+        {
+          "id": "8HhDoapLmn8",
+          "duration_sec": 767,
+          "channel": "𝗦𝘁𝗮𝗿𝗖𝗼𝗱𝗲 𝗞𝗵",
+          "title": "API Design Best Practices: Versioning, Idempotency & Pagination",
+          "url": "https://www.youtube.com/watch?v=8HhDoapLmn8"
+        },
+        {
+          "id": "XAccGbtl3Z8",
+          "duration_sec": 485,
+          "channel": "Alex Hyett",
+          "title": "Idempotency - What it is and How to Implement it",
+          "url": "https://www.youtube.com/watch?v=XAccGbtl3Z8"
+        }
+      ]
+    }
+  ],
+  "off_goal": [
+    {
+      "video_id": "U-G-mSd4KAE",
+      "reason": "A Python decorators tutorial, unrelated to system design interview preparation."
+    }
+  ],
+  "checks": [
+    "Agent 1: 35 of 39 claimed topics were backed by a quote found in the transcript; 4 unsupported topic(s) removed.",
+    "Agent 2: every video appears exactly once.",
+    "Agent 3: every 'covered' claim cites a real video from the playlist.",
+    "Suggestions: 12 real YouTube candidates found for 6 suggested topics (candidates are search results, not yet vetted against the transcript)."
+  ],
+  "stats": {
+    "topics_claimed": 39,
+    "topics_grounded": 35,
+    "videos_readded_to_order": 0,
+    "areas_downgraded_to_missing": 0,
+    "suggestions": 6,
+    "candidates_found": 12
+  }
+}

@@ -637,3 +637,368 @@ code { font-family: ui-monospace, Consolas, monospace; font-size: .92em; backgro
   .imp__tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) { .imp__spin { animation-duration: 2.4s; } }
+
+/* ============================================================
+   smart: "Smart arrange" button + learning-path panel (smart.js). Every class is prefixed smart-.
+   ============================================================ */
+/* (the Smart arrange button itself is the glass lens from water.js: see smartmagic.css / smartmagic.js) */
+
+/* ----- panel: monochrome glass, serif titles, hairlines. Entrance = rows slide in from the left (see smart.js entrance()) ----- */
+.smart { margin: 0 0 36px; }
+.smart:empty { display: none; }
+.smart-note { margin: -8px 0 0; font-size: 13px; }
+.smart-card { position: relative; isolation: isolate; padding: 26px 22px 72px; }
+.smart-head__titles { min-width: 0; }
+.smart-drawer__bar { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 58px; padding: 0 16px 0 22px; border-bottom: 1px solid var(--line); }
+.smart-drawer__bar .eyebrow { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 11px; }
+.smart-drawer__bar .eyebrow::before { content: ""; width: 5px; height: 5px; background: var(--white); transform: rotate(45deg); flex: none; }
+.smart-gen { margin-bottom: 10px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.smart-title { font-family: var(--font-display); font-weight: 500; font-size: 28px; line-height: 1.14; letter-spacing: -.015em; overflow-wrap: anywhere; outline: none; }
+.smart-summary { margin-top: 12px; color: #c4c4c4; font-size: 15px; line-height: 1.6; }
+.smart-figs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 20px 14px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+.smart-fig { display: flex; flex-direction: column; gap: 6px; }
+.smart-fig b { font-family: var(--font-display); font-weight: 500; font-size: 30px; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.smart-fig span { font-size: 10.5px; line-height: 1.35; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.smart-stale { display: flex; align-items: center; gap: 10px; margin-top: 22px; padding: 11px 16px; border: 1px solid var(--line); border-radius: var(--r-md); background: rgba(255,255,255,.03); font-size: 13px; color: var(--muted); }
+.smart-stale::before { content: ""; width: 7px; height: 7px; border: 1.5px solid var(--accent); border-radius: 50%; flex: none; }
+
+/* quiet marks: dot (hollow = missing, half = partly, filled = covered), priority bars, tags */
+.smart-dot { display: inline-block; width: 7px; height: 7px; border: 1.5px solid var(--text); border-radius: 50%; flex: none; }
+.smart-dot--partial { background: linear-gradient(90deg, var(--text) 50%, transparent 50%); }
+.smart-dot--covered { background: var(--accent); border-color: var(--accent); }
+.smart-dot--off { border-color: var(--muted); }
+.smart-prio { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; }
+.smart-prio i { width: 3px; border-radius: 1px; background: rgba(255,255,255,.2); transform-origin: 50% 100%; }
+.smart-prio i:nth-child(1) { height: 5px; }
+.smart-prio i:nth-child(2) { height: 8px; --k: 1; }
+.smart-prio i:nth-child(3) { height: 12px; --k: 2; }
+.smart-prio i.on { background: var(--text); }
+.smart-tag { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+
+/* glass buttons (secondary actions): same material as the page's glass pills, no loud fills */
+.smart-glass {
+  color: #dcdcdc; border: 1px solid rgba(255,255,255,.15);
+  background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.025));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 8px 18px -12px rgba(0,0,0,.9);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  transition: background .25s var(--ease), border-color .25s var(--ease), color .25s var(--ease), transform .16s var(--ease);
+}
+.smart-glass:hover { color: #fff; border-color: rgba(255,255,255,.42); background: linear-gradient(180deg, rgba(255,255,255,.17), rgba(255,255,255,.05)); }
+.smart-glass:active { transform: scale(.96); }
+.smart-act { min-height: 32px; padding: 0 13px; gap: 6px; font-size: 12.5px; }
+.smart-act .icon { width: 15px; height: 15px; }
+.smart-act--icon { width: 32px; padding: 0; }
+.smart-act.is-added[disabled] { opacity: .75; color: var(--accent); }
+.smart-act.is-added::before { content: ""; width: 4px; height: 8px; margin: -2px 2px 0 0; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(40deg); }
+
+/* spotlight rows (hover / focus): hairline rim + a soft sheen under the pointer, like the playlist cards */
+.smart-hov { position: relative; isolation: isolate; transition: background-size .3s var(--ease); }
+.smart-hov::before {
+  content: ""; position: absolute; inset: 0; z-index: 2; padding: 1px; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(145deg, rgba(255,255,255,.5), rgba(255,255,255,.07) 45%, rgba(255,255,255,.26));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  opacity: 0; transition: opacity .35s var(--ease);
+}
+.smart-hov::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(420px circle at var(--x, 30%) var(--y, 0%), rgba(255,255,255,.085), rgba(255,255,255,.02) 55%, transparent 75%);
+  opacity: 0; transition: opacity .35s var(--ease);
+}
+.smart-hov:hover::before, .smart-hov:focus-within::before, .smart-hov:hover::after, .smart-hov:focus-within::after { opacity: 1; }
+.smart-hov:hover, .smart-hov:focus-within { box-shadow: 0 20px 40px -26px rgba(255,255,255,.22); }
+
+/* entrance: a reveal item (.smart-rv) waits invisible until smart.js adds .is-in, then slides in from the left. --i = its place in the batch */
+.smart-anim { --step: 70ms; --dx: -28px; --dur: .52s; }
+.smart-anim--soft { --step: 45ms; --dx: -14px; --dur: .4s; }
+.smart-anim .smart-rv:not(.is-in) { opacity: 0; }
+.smart-rv.is-in:not(.is-seen) { animation: sp-in var(--dur, .52s) var(--ease) both; animation-delay: calc(var(--i, 0) * var(--step, 70ms)); }
+@keyframes sp-in { from { opacity: 0; transform: translateX(var(--dx, -28px)); } to { opacity: 1; transform: none; } }
+.smart-rv.is-in:not(.is-seen) .smart-mark { animation: sp-mark .5s var(--ease) both; animation-delay: calc(var(--i, 0) * var(--step, 70ms) + 380ms + var(--k, 0) * 90ms); }
+.smart-rv.is-in:not(.is-seen) .smart-prio i { animation-name: sp-bar; }
+@keyframes sp-mark { from { opacity: 0; transform: scale(.2); } to { opacity: 1; transform: none; } }
+@keyframes sp-bar { from { opacity: 0; transform: scaleY(0); } to { opacity: 1; transform: none; } }
+
+.smart-sec { margin-top: 40px; }
+.smart-sec--order { margin-top: 64px; }
+.smart-sec__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.smart-h { font-family: var(--font-display); font-weight: 500; font-size: 24px; line-height: 1.25; letter-spacing: -.01em; outline: none; }
+.smart-sec--topics .smart-h { font-size: clamp(28px, 3.6vw, 38px); line-height: 1.15; }
+.smart-sec__sub { margin-top: 10px; font-size: 14px; }
+.smart-h2 { margin: 36px 0 12px; font-size: 11px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); }
+.smart-label { display: flex; align-items: center; gap: 14px; margin: 22px 0 8px; font-size: 11px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+.smart-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+/* the hairline under a section title draws itself left to right with a light streak (the sweep) */
+.smart-rule { display: block; position: relative; height: 1px; margin-top: 16px; background: var(--line); overflow: hidden; }
+.smart-rule::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(255,255,255,.5), rgba(255,255,255,.2) 60%, rgba(255,255,255,.08)); transform-origin: 0 50%; }
+.smart-rule::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 26%; background: linear-gradient(90deg, transparent, #fff, transparent); opacity: 0; }
+.smart-anim .smart-rule:not(.is-in)::before { transform: scaleX(0); }
+.smart-rule.smart-rv.is-in:not(.is-seen) { animation: none; }
+.smart-rule.is-in:not(.is-seen)::before { animation: sp-line .9s var(--ease) both; animation-delay: calc(var(--i, 0) * var(--step, 70ms) + 120ms); }
+.smart-rule.is-in:not(.is-seen)::after { animation: sp-comet .9s var(--ease) both; animation-delay: calc(var(--i, 0) * var(--step, 70ms) + 120ms); }
+@keyframes sp-line { from { transform: scaleX(0); } to { transform: none; } }
+@keyframes sp-comet { 0% { opacity: 0; transform: translateX(-100%); } 15% { opacity: .9; } 100% { opacity: 0; transform: translateX(385%); } }
+
+/* topics to cover = the hero: roomy rows divided by hairlines; a row turns into a glass card when hovered */
+.smart-areas { display: grid; margin: 12px -16px 0; }
+.smart-area, .smart-also, .smart-ord, .smart-lo {
+  border-radius: 0; background: linear-gradient(var(--line), var(--line)) 16px 100% / calc(100% - 32px) 1px no-repeat;
+}
+.smart-area:last-child, .smart-ord:last-child, .smart-lo:last-child { background-image: none; }
+.smart-area:hover, .smart-area:focus-within, .smart-also:hover, .smart-also:focus-within, .smart-ord:hover, .smart-ord:focus-within, .smart-lo:hover, .smart-lo:focus-within { border-radius: var(--r-md); background-size: 0 1px; }
+.smart-area { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 0 14px; padding: 28px 16px 26px; }
+.smart-area__n { padding-top: 3px; font-family: var(--font-display); font-size: 22px; line-height: 1.3; letter-spacing: .02em; color: #666; font-variant-numeric: tabular-nums; }
+.smart-area__main { min-width: 0; }
+.smart-area__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px 22px; flex-wrap: wrap; }
+.smart-area__name { margin: 0; font-family: var(--font-display); font-size: 22px; font-weight: 500; line-height: 1.3; letter-spacing: -.005em; overflow-wrap: anywhere; min-width: 0; flex: 1 1 260px; }
+.smart-status { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; font-size: 11px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.smart-st { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.smart-area__why { margin-top: 8px; max-width: 66ch; font-size: 15px; color: #bcbcbc; }
+.smart-area__by { margin-top: 8px; font-size: 13px; }
+.smart-area__none { margin-top: 16px; font-size: 13px; }
+.smart-vt { color: var(--text); }
+.smart-sug { margin-top: 4px; }
+.smart-sug__why { font-size: 13px; margin: 8px 0 6px; }
+.smart-kind { margin-right: 10px; font-size: 10.5px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+/* suggested videos: slim rows on a quiet rail */
+.smart-cands { display: grid; gap: 2px; }
+.smart-cand { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 9px 4px 9px 16px; border-radius: 0 var(--r-sm) var(--r-sm) 0; transition: background .25s var(--ease); }
+.smart-cand::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 1px; background: var(--line-strong); transition: background .25s var(--ease), top .25s var(--ease), bottom .25s var(--ease); }
+.smart-cand:hover, .smart-cand:focus-within { background: rgba(255,255,255,.04); }
+.smart-cand:hover::before, .smart-cand:focus-within::before { background: var(--white); top: 4px; bottom: 4px; }
+.smart-cand__info { min-width: 0; }
+.smart-cand__title { font-size: 14.5px; font-weight: 500; line-height: 1.35; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.smart-cand__meta { margin-top: 2px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.smart-cand__acts { display: flex; flex: none; gap: 6px; }
+.smart-rv.is-in:not(.is-seen) .smart-cand { animation: sp-in var(--dur, .52s) var(--ease) both; animation-delay: calc(var(--i, 0) * var(--step, 70ms) + 260ms + var(--c, 0) * 70ms); }
+.smart-also { padding: 24px 16px; margin: 0 -16px; }
+.smart-also__topic { font-family: var(--font-display); font-size: 19px; font-weight: 500; margin-bottom: 6px; overflow-wrap: anywhere; }
+
+.smart-covered { margin-top: 40px; border-top: 1px solid var(--line); }
+.smart-covered__sum, .smart-checks__sum { cursor: pointer; list-style: none; padding: 16px 0; font-size: 11px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+.smart-checks__sum { padding: 6px 0; letter-spacing: .02em; text-transform: none; font-size: 12px; font-weight: 400; color: var(--muted); width: max-content; }
+.smart-covered__sum::-webkit-details-marker, .smart-checks__sum::-webkit-details-marker { display: none; }
+.smart-covered__sum::before, .smart-checks__sum::before { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 10px 2px 0; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(-45deg); transition: transform var(--dur); }
+.smart-covered[open] > .smart-covered__sum::before, .smart-checks[open] > .smart-checks__sum::before { transform: rotate(45deg); }
+.smart-covered__sum:focus-visible, .smart-checks__sum:focus-visible { outline-offset: -2px; }
+.smart-covlist { display: grid; gap: 0; padding: 0 0 8px; }
+.smart-cov { position: relative; padding: 10px 0 10px 24px; }
+.smart-cov::before { content: ""; position: absolute; left: 0; top: 17px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.smart-cov__name { font-size: 15px; font-weight: 500; }
+.smart-cov__by { margin-top: 2px; font-size: 12.5px; overflow-wrap: anywhere; }
+
+/* recommended order: big quiet serif numerals */
+.smart-order { display: grid; margin: 12px -16px 0; }
+.smart-ord { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 0 14px; padding: 20px 16px; }
+.smart-ord.is-gone .smart-ord__title { color: var(--muted); }
+.smart-ord__n { font-family: var(--font-display); font-size: 30px; line-height: 1; color: #5f5f5f; font-variant-numeric: tabular-nums; }
+.smart-ord__title { font-size: 15.5px; font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; }
+.smart-ord__meta { margin-top: 2px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+.smart-ord__why { margin-top: 6px; max-width: 64ch; font-size: 14px; color: #b4b4b4; }
+.smart-left { display: grid; margin: 0 -16px; }
+.smart-lo { padding: 16px; }
+.smart-lo__top { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.smart-lo__title { min-width: 0; font-size: 14.5px; overflow-wrap: anywhere; color: #cfcfcf; }
+.smart-lo__why { margin-top: 4px; font-size: 13px; max-width: 64ch; }
+
+.smart-foot { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--line); }
+.smart-foot__line { font-size: 12.5px; letter-spacing: .02em; font-variant-numeric: tabular-nums; }
+.smart-foot__line .smart-num { font-weight: 500; color: var(--text); }
+.smart-checks { margin-top: 2px; }
+.smart-checks__list { display: grid; gap: 4px; padding: 4px 0 0 16px; font-size: 12px; color: var(--muted); list-style: disc; }
+
+/* running / error */
+.smart-run__stage { font-family: var(--font-display); font-size: clamp(24px, 3.4vw, 32px); font-weight: 500; line-height: 1.2; letter-spacing: -.01em; }
+.smart-track { position: relative; height: 2px; margin: 22px 0 14px; border-radius: var(--r-pill); background: rgba(255,255,255,.12); overflow: hidden; }
+.smart-track__fill { position: relative; display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, rgba(255,255,255,.35), var(--white)); transition: width .6s var(--ease); overflow: hidden; }
+.smart-track__fill::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 40%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.9), transparent); animation: sp-run 1.5s linear infinite; }
+@keyframes sp-run { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+.smart-run__note { font-size: 13px; }
+/* waiting state: the rows of the result, unwritten yet (same shimmer as the notes view), sliding in left to right */
+.smart-skel { display: grid; gap: 0; margin-top: 34px; }
+.smart-skel__row { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 0 14px; padding: 22px 0; background: linear-gradient(var(--line), var(--line)) 0 100% / 100% 1px no-repeat; animation: sp-in .52s var(--ease) both; animation-delay: calc(var(--i, 0) * 90ms); }
+.smart-skel__row:last-child { background: none; }
+.smart-skel__main { display: grid; gap: 11px; align-content: start; min-width: 0; }
+.smart-sk { display: block; height: 11px; max-width: 100%; border-radius: 6px; background: linear-gradient(100deg, rgba(255,255,255,.05) 30%, rgba(255,255,255,.12) 50%, rgba(255,255,255,.05) 70%) 0 0 / 220% 100%; animation: sp-shim 1.4s linear infinite; animation-delay: calc(var(--i, 0) * -.25s); }
+.smart-sk--h { height: 17px; }
+.smart-sk--n { width: 24px; height: 24px; }
+@keyframes sp-shim { to { background-position: -120% 0; } }
+.smart-err { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.smart-err__title { display: flex; align-items: center; gap: 12px; font-family: var(--font-display); font-size: 20px; font-weight: 500; }
+.smart-err__title::before { content: ""; width: 8px; height: 8px; border: 1.5px solid var(--danger); border-radius: 50%; flex: none; }
+.smart-err__msg .muted { margin: 4px 0 0 20px; font-size: 13px; }
+
+/* the drawer is always narrow (<= 440px): rows stack, numbers and names on one line, status below */
+.smart-sec { margin-top: 40px; }
+.smart-sec--order { margin-top: 48px; }
+.smart-sec__head { flex-wrap: wrap; }
+.smart-areas, .smart-order, .smart-left { margin-left: -10px; margin-right: -10px; }
+.smart-also { margin-left: -10px; margin-right: -10px; padding: 20px 10px; }
+.smart-area, .smart-ord, .smart-lo { grid-template-columns: 30px minmax(0, 1fr); gap: 0 8px; padding: 22px 10px; }
+.smart-lo { display: block; }
+.smart-area, .smart-ord { background-position: 10px 100%; background-size: calc(100% - 20px) 1px; }
+.smart-area__n { font-size: 17px; }
+.smart-ord__n { font-size: 24px; }
+.smart-area__name { font-size: 20px; flex-basis: 100%; }
+.smart-cand { flex-wrap: wrap; gap: 8px; }
+.smart-cand__info { flex: 1 1 100%; }
+.smart-skel__row { grid-template-columns: 30px minmax(0, 1fr); gap: 0 8px; }
+.smart-err .btn { width: 100%; }
+
+/* ----- typography of the drawer: one modular scale (1.2, base 14), three inks, a 4px rhythm ----- */
+.smart-card {
+  --st-2xs: 11px; --st-xs: 12px; --st-sm: 13px; --st-base: 14px; --st-md: 15px; --st-lg: 17px; --st-xl: 20px; --st-2xl: 24px; --st-3xl: 30px;
+  --ink-1: #f4f4f4; --ink-2: rgba(255,255,255,.78); --ink-3: rgba(255,255,255,.60); --ink-4: rgba(255,255,255,.38);
+  --track: .14em;
+  padding: 28px 24px 72px; counter-reset: sp-sec;
+  font-feature-settings: "kern", "liga", "calt"; font-optical-sizing: auto; text-rendering: optimizeLegibility;
+}
+.smart-card .muted { color: var(--ink-3); }
+/* small labels: one size, one tracking, case-sensitive punctuation */
+.smart-gen, .smart-fig span, .smart-tag, .smart-status, .smart-label, .smart-h2, .smart-kind, .smart-covered__sum, .smart-ord__meta {
+  font-family: var(--font-body); font-size: var(--st-2xs); font-weight: 500; line-height: 16px; letter-spacing: var(--track); text-transform: uppercase;
+  font-feature-settings: "kern", "case", "tnum"; color: var(--ink-3);
+}
+/* every serif numeral: lining + tabular so columns line up */
+.smart-num, .smart-area__n, .smart-ord__n, .smart-fig b { font-variant-numeric: lining-nums tabular-nums; font-feature-settings: "kern", "lnum", "tnum"; }
+
+/* header */
+.smart-gen { margin-bottom: 12px; }
+.smart-title { font-size: var(--st-3xl); line-height: 1.12; letter-spacing: -.022em; text-wrap: balance; hyphens: manual; overflow-wrap: break-word; }
+.smart-title__goal { font-style: italic; font-weight: 500; letter-spacing: -.01em; }
+.smart-summary { margin-top: 16px; max-width: 42ch; font-family: var(--font-display); font-style: italic; font-weight: 400; font-size: var(--st-lg); line-height: 1.5; color: var(--ink-2); text-wrap: pretty; }
+.smart-figs { gap: 0; margin-top: 28px; padding: 16px 0 0; }
+.smart-fig { gap: 8px; padding: 0 12px; border-left: 1px solid var(--line); }
+.smart-fig:first-child { padding-left: 0; border-left: 0; }
+.smart-fig b { font-size: var(--st-3xl); font-weight: 500; line-height: 32px; letter-spacing: -.01em; color: var(--ink-1); }
+.smart-fig span { line-height: 1.4; letter-spacing: .1em; text-wrap: balance; }
+
+/* section heads: a small index above a serif title */
+.smart-sec { counter-increment: sp-sec; }
+.smart-h { font-size: var(--st-2xl); line-height: 1.2; letter-spacing: -.015em; text-wrap: balance; hyphens: manual; }
+.smart-sec--topics .smart-h { font-size: var(--st-3xl); line-height: 1.12; letter-spacing: -.022em; }
+.smart-h::before {
+  content: "Part " counter(sp-sec, upper-roman); content: "Part " counter(sp-sec, upper-roman) / "";
+  display: block; margin-bottom: 8px; font-family: var(--font-body); font-size: var(--st-2xs); font-weight: 500; line-height: 16px; letter-spacing: var(--track); text-transform: uppercase; font-feature-settings: "kern", "case"; color: var(--ink-3);
+}
+.smart-rule { margin-top: 16px; }
+.smart-sec__sub { margin-top: 12px; max-width: 44ch; font-size: var(--st-sm); line-height: 1.55; text-wrap: pretty; }
+.smart-h2 { margin: 40px 0 8px; color: var(--ink-2); }
+.smart-label { gap: 12px; margin: 20px 0 4px; color: var(--ink-3); }
+
+/* topic rows: numeral hangs in the gutter on the name's first line */
+.smart-area { padding: 24px 10px; }
+.smart-area__n { padding-top: 0; font-size: var(--st-md); line-height: 28px; letter-spacing: .02em; color: var(--ink-4); }
+.smart-area__name { font-size: var(--st-xl); line-height: 28px; letter-spacing: -.012em; text-wrap: balance; hyphens: manual; overflow-wrap: break-word; }
+.smart-area__head { row-gap: 8px; }
+.smart-status { gap: 4px 16px; letter-spacing: .12em; }
+.smart-st { gap: 8px; }
+.smart-area__why { margin-top: 12px; max-width: 44ch; font-size: var(--st-md); line-height: 1.6; color: var(--ink-2); text-wrap: pretty; }
+.smart-area__by, .smart-area__none { font-size: var(--st-sm); line-height: 1.55; }
+.smart-vt { color: var(--ink-1); }
+
+/* suggested videos: kind label over an italic serif reason, then slim rows with quiet right-aligned actions */
+.smart-sug { margin-top: 8px; }
+.smart-sug + .smart-sug { margin-top: 16px; }
+.smart-sug__why { margin: 8px 0 8px; }
+.smart-kind { display: block; margin: 0 0 4px; color: var(--ink-2); }
+.smart-sug__reason { display: block; max-width: 44ch; font-family: var(--font-display); font-style: italic; font-weight: 400; font-size: var(--st-md); line-height: 1.5; color: var(--ink-2); text-wrap: pretty; }
+.smart-cand { flex-wrap: nowrap; align-items: center; gap: 12px; padding: 8px 4px 8px 16px; }
+.smart-cand__info { flex: 1 1 auto; min-width: 0; }
+.smart-cand__title { font-size: var(--st-base); font-weight: 500; line-height: 20px; letter-spacing: -.006em; color: var(--ink-1); overflow-wrap: break-word; text-wrap: pretty; }
+.smart-cand__meta { margin-top: 4px; font-size: var(--st-xs); line-height: 16px; font-variant-numeric: tabular-nums; color: var(--ink-3); }
+.smart-cand__acts { gap: 4px; align-self: center; }
+.smart-cand .smart-act { min-height: 28px; padding: 0 10px 0 8px; gap: 4px; font-size: var(--st-xs); font-weight: 500; border-radius: 999px; }
+.smart-cand .smart-act .icon { width: 13px; height: 13px; }
+.smart-cand .smart-act--icon { width: 28px; padding: 0; }
+.smart-also__topic { font-size: var(--st-lg); line-height: 1.3; letter-spacing: -.01em; text-wrap: balance; }
+
+/* already covered */
+.smart-covered { margin-top: 40px; }
+.smart-covered__sum { padding: 16px 0; color: var(--ink-2); }
+.smart-cov { padding: 8px 0 8px 20px; }
+.smart-cov::before { top: 15px; width: 6px; height: 6px; }
+.smart-cov__name { font-family: var(--font-display); font-size: var(--st-md); font-weight: 500; line-height: 1.45; letter-spacing: -.005em; }
+.smart-cov__by { margin-top: 2px; font-size: var(--st-xs); line-height: 1.5; }
+
+/* recommended order */
+.smart-ord { padding: 20px 10px; }
+.smart-ord__n { font-size: var(--st-2xl); line-height: 24px; color: var(--ink-4); }
+.smart-ord__title { font-size: var(--st-md); line-height: 22px; letter-spacing: -.006em; text-wrap: pretty; }
+.smart-ord__meta { margin-top: 4px; }
+.smart-ord__why { margin-top: 8px; max-width: 44ch; font-size: var(--st-base); line-height: 1.6; color: var(--ink-2); text-wrap: pretty; }
+.smart-lo__title { font-size: var(--st-base); line-height: 1.45; color: var(--ink-2); }
+.smart-lo__why { margin-top: 4px; font-size: var(--st-sm); line-height: 1.55; text-wrap: pretty; }
+
+/* footer */
+.smart-foot { margin-top: 56px; padding-top: 16px; }
+.smart-foot__line { font-size: var(--st-xs); line-height: 1.6; letter-spacing: 0; }
+.smart-foot__line .smart-num { color: var(--ink-1); }
+.smart-checks__sum, .smart-checks__list { font-size: var(--st-xs); color: var(--ink-3); }
+.smart-stale { font-size: var(--st-sm); line-height: 1.5; color: var(--ink-2); }
+
+/* ----- the drawer (right side) + its handle. smart.js builds one per page in <body>; closed by default ----- */
+:root { --dock-w: min(440px, 92vw); --dock-t: .38s; }
+.smart-dock[hidden] { display: none; }
+.smart-drawer {
+  position: fixed; z-index: 40; top: var(--bar-h); right: 0; bottom: 0; width: var(--dock-w); display: flex; flex-direction: column;
+  background: radial-gradient(520px 260px at 0% 0%, rgba(255,255,255,.055), transparent 70%), linear-gradient(180deg, var(--panel-2), var(--panel) 40%, #090909);
+  border-left: 1px solid var(--line); box-shadow: -30px 0 60px -40px rgba(0,0,0,.9);
+  transform: translateX(100%); visibility: hidden;
+  transition: transform var(--dock-t) var(--ease), visibility 0s linear var(--dock-t);
+  outline: none;
+}
+.smart-dock.is-open .smart-drawer { transform: none; visibility: visible; transition-delay: 0s; }
+.smart-drawer::before { content: ""; position: absolute; left: 0; top: 8%; bottom: 8%; width: 1px; z-index: 2; pointer-events: none; background: linear-gradient(180deg, transparent, rgba(255,255,255,.3), transparent); }
+.smart-drawer__scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.18) transparent; }
+.smart-close { flex: none; display: grid; place-items: center; width: 34px; height: 34px; padding: 0 0 2px; border-radius: 50%; font-size: 22px; line-height: 1; }
+.smart-scrim { position: fixed; inset: 0; z-index: 88; background: rgba(0,0,0,.62); opacity: 0; pointer-events: none; transition: opacity var(--dock-t) var(--ease); display: none; }
+
+/* handle: a slim glass tab on the right edge, vertically centred; it rides the drawer edge when open */
+.smart-handle {
+  position: fixed; z-index: 41; top: 50%; right: 0; transform: translateY(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 12px; width: 46px; padding: 16px 0 18px;
+  color: #e6e6e6; border: 1px solid rgba(255,255,255,.16); border-right: 0; border-radius: 16px 0 0 16px;
+  background: linear-gradient(90deg, rgba(255,255,255,.11), rgba(255,255,255,.035));
+  box-shadow: inset 1px 0 0 rgba(255,255,255,.16), -14px 10px 30px -14px rgba(0,0,0,.9);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  transition: right var(--dock-t) var(--ease), background .25s var(--ease), color .25s var(--ease), width .25s var(--ease);
+}
+.smart-handle:hover { width: 52px; color: #fff; background: linear-gradient(90deg, rgba(255,255,255,.18), rgba(255,255,255,.06)); }
+.smart-handle:focus-visible { outline: 2px solid var(--white); outline-offset: 2px; }
+.smart-handle__spark { width: 16px; height: 16px; flex: none; }
+.smart-handle__label { writing-mode: vertical-rl; font-size: 11px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; white-space: nowrap; }
+.smart-handle__badge { order: 3; display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: var(--r-pill); background: var(--white); color: var(--ink); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.smart-handle__badge:empty { background: transparent; border: 1.5px solid rgba(255,255,255,.2); border-top-color: var(--white); width: 18px; min-width: 18px; height: 18px; padding: 0; animation: sp-spin 1s linear infinite; }
+.smart-handle.is-err .smart-handle__badge { background: transparent; color: var(--danger); border: 1.5px solid var(--danger); animation: none; }
+.smart-handle.is-pulse { animation: sp-pulse 1.4s var(--ease) 1; }
+@keyframes sp-spin { to { transform: rotate(360deg); } }
+@keyframes sp-pulse { 0% { box-shadow: inset 1px 0 0 rgba(255,255,255,.16), -14px 10px 30px -14px rgba(0,0,0,.9), 0 0 0 0 rgba(255,255,255,.5); } 100% { box-shadow: inset 1px 0 0 rgba(255,255,255,.16), -14px 10px 30px -14px rgba(0,0,0,.9), 0 0 0 22px rgba(255,255,255,0); } }
+
+/* wide screens: the drawer pushes the page (the top bar keeps its full width); narrower: overlay sheet + scrim + scroll lock */
+@media (min-width: 1024px) {
+  :root { --dock-w: clamp(340px, 31vw, 440px); }
+  body.smart-dock-on { transition: padding-right var(--dock-t) var(--ease); }
+  body.smart-dock-on .topbar { transition: margin-right var(--dock-t) var(--ease); }
+  body.smart-dock-open { padding-right: var(--dock-w); }
+  body.smart-dock-open .topbar { margin-right: calc(-1 * var(--dock-w)); }
+  .smart-dock.is-open .smart-handle { right: var(--dock-w); }
+}
+@media (max-width: 1023.98px) {
+  .smart-drawer { z-index: 90; top: 0; }
+  .smart-scrim { display: block; }
+  .smart-dock.is-open .smart-scrim { opacity: 1; pointer-events: auto; }
+  .smart-dock.is-open .smart-handle { opacity: 0; pointer-events: none; }
+  .smart-handle { transition: opacity .2s var(--ease), width .25s var(--ease); }
+}
+body.smart-lock { overflow: hidden; }
+@media (prefers-reduced-motion: reduce) {
+  .smart-rv, .smart-rv *, .smart-rule::before, .smart-rule::after, .smart-skel__row, .smart-skel__row *, .smart-sk, .smart-track__fill::after { animation: none !important; transition: none !important; }
+  .smart-anim .smart-rv:not(.is-in) { opacity: 1; }
+  .smart-anim .smart-rule:not(.is-in)::before { transform: none; }
+  .smart-track__fill, .smart-covered__sum::before, .smart-checks__sum::before, .smart-hov, .smart-hov::before, .smart-hov::after, .smart-glass, .smart-cand, .smart-cand::before { transition: none; }
+  .smart-glass:active { transform: none; }
+  .smart-drawer, .smart-scrim, .smart-handle, body.smart-dock-on, body.smart-dock-on .topbar { transition: none !important; }
+  .smart-handle.is-pulse, .smart-handle__badge:empty { animation: none; }
+}

@@ -1,0 +1,91 @@
+{
+  "provider": "gemini",
+  "model": "gemini-3.5-flash-lite",
+  "source": "provider API responses",
+  "calls": [
+    {
+      "agent": 1,
+      "label": "profiler batch 1/2",
+      "prompt_tokens": 3864,
+      "completion_tokens": 778,
+      "reasoning_tokens": 0,
+      "total_tokens": 4642,
+      "api_seconds": 3.19
+    },
+    {
+      "agent": 1,
+      "label": "profiler batch 2/2",
+      "prompt_tokens": 4374,
+      "completion_tokens": 961,
+      "reasoning_tokens": 0,
+      "total_tokens": 5335,
+      "api_seconds": 3.15
+    },
+    {
+      "agent": 2,
+      "label": "sequencer",
+      "prompt_tokens": 1263,
+      "completion_tokens": 427,
+      "reasoning_tokens": 0,
+      "total_tokens": 1690,
+      "api_seconds": 2.31
+    },
+    {
+      "agent": 3,
+      "label": "gap analyst",
+      "prompt_tokens": 1416,
+      "completion_tokens": 960,
+      "reasoning_tokens": 0,
+      "total_tokens": 2376,
+      "api_seconds": 3.13
+    },
+    {
+      "agent": 3,
+      "label": "gap analyst",
+      "prompt_tokens": 1049,
+      "completion_tokens": 959,
+      "reasoning_tokens": 0,
+      "total_tokens": 2008,
+      "api_seconds": 2.66
+    }
+  ],
+  "per_agent": {
+    "1": {
+      "calls": 2,
+      "prompt_tokens": 8238,
+      "completion_tokens": 1739,
+      "reasoning_tokens": 0,
+      "total_tokens": 9977,
+      "api_seconds": 6.3,
+      "wall_seconds": 6.4
+    },
+    "2": {
+      "calls": 1,
+      "prompt_tokens": 1263,
+      "completion_tokens": 427,
+      "reasoning_tokens": 0,
+      "total_tokens": 1690,
+      "api_seconds": 2.3,
+      "wall_seconds": 2.3
+    },
+    "3": {
+      "calls": 2,
+      "prompt_tokens": 2465,
+      "completion_tokens": 1919,
+      "reasoning_tokens": 0,
+      "total_tokens": 4384,
+      "api_seconds": 5.8,
+      "wall_seconds": 5.8
+    }
+  },
+  "totals": {
+    "calls": 5,
+    "prompt_tokens": 11966,
+    "completion_tokens": 4085,
+    "reasoning_tokens": 0,
+    "total_tokens": 16051,
+    "api_seconds": 14.4,
+    "wall_seconds": 14.5,
+    "waiting_seconds": 0.1
+  }
+}

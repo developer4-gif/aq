@@ -37,7 +37,9 @@ and notes calls answer `503 {"code":"py_offline"}`.
 | `DB_FILE` | `aq-api/data/aq.db` | SQLite file (created, migrated on start; `:memory:` works for experiments) |
 | `UI_DIR` | `../lecture-notes-ui` | folder served statically |
 | `PY_NOTES_URL` | `http://127.0.0.1:5055` | the Python notes service. Must be loopback unless `ALLOW_REMOTE_PY=1` |
-| `PY_NOTES_PROVIDER` | `groq` | provider name sent to Python when starting a job |
+| `PY_NOTES_PROVIDER` | `groq` | provider name sent to Python when starting a notes job |
+| `PY_SMART_PROVIDER` | `gemini` | provider name sent to Python when starting a smart playlist run (`gemini` or `groq`) |
+| `PY_SMART_MODEL` | (empty) | optional model name for smart runs; empty = the worker's default for that provider |
 | `NOTES_REQUIRE_MEMBERSHIP` | `1` | `0` lets any user start notes for any video id (default: only videos in their own playlists) |
 | `RATE_LIMIT_PER_MIN` | `600` | requests per IP per minute for `/api/v1` |
 | `RATE_LIMIT_HEAVY_PER_MIN` | `20` | starting notes + YouTube imports per IP per minute |
@@ -69,10 +71,14 @@ Everything except `health` runs through `authenticate` and is scoped to `req.use
 | `GET /notes/:videoId` | `{state: none\|queued\|running\|ready\|error, pct, stage, message, error, jobId}` (refreshes from Python) |
 | `POST /notes/:videoId` | start notes. **Cache:** ready -> 200 immediately (`cached:true`); already running -> 200 with its progress; otherwise starts one Python job -> 202. One live job per video across all users |
 | `GET /notes/:videoId/html`, `/pdf` | streams the finished file from Python (404 when not ready or expired) |
+| `POST /playlists/:id/smart` | smart arrangement + topics to cover (the playlist name is the learning goal). 404 unknown playlist, 422 when it has < 2 or > 20 videos. **Cache:** a queued / running / ready run with the same fingerprint (sha256 of the goal + the sorted video ids) is returned -> 200 with `cached:true`; otherwise one Python job is started -> 202. A failed run never blocks a new one. Heavy rate limiter |
+| `GET /playlists/:id/smart` | the latest run of that playlist: `{state: none\|queued\|running\|ready\|error, pct, stage, message, error, fingerprint, current, generatedAt, provider, model, result?, usage?}`. `current:false` = the playlist changed since the run (the result is still returned). `result`/`usage` only when `ready`; they are stored in SQLite, so they survive restarts. Refreshes from Python while running; a Python 404 (restart) -> `error` "The analysis was interrupted - run it again" |
 | `GET /import/youtube?url=` | proxies Python `/api/playlist` (only the validated `list=` id is forwarded, as a canonical URL) |
 | `POST /sync/import` | `{mode: "merge"\|"replace", playlists, progress}`: one-time import of the browser's localStorage, also used to push offline edits. Lenient (bad entries dropped); returns the full resulting state |
 
 Also: `GET /static/fonts/:file` (not under `/api`) streams the fonts the generated notes page references from Python.
+
+Smart runs (`sql/002_smart_runs.sql`, table `smart_runs`) are kept per playlist (deleted with it). The stored result must be a JSON object of at most 512 KB, otherwise the run becomes an `error`.
 
 Notes records expire when Python forgets a job (restart): a definitive 404 from Python marks the record `expired`
 (status becomes `none`) and a new `POST` starts a fresh job. Network errors never expire anything.
@@ -91,6 +97,7 @@ description 0-160, title 150, channel 80 (long titles are truncated, long names 
 | `playlists` | `pk`, `user_id`, `slug` (public id, UNIQUE per user), `name` (UNIQUE per user, NOCASE), `description`, `source_list_id`, `source_imported_at`, `created_at`, `updated_at` |
 | `playlist_videos` | PK `(playlist_pk, video_id)`, `position` (0..n-1), per-entry `title`, `channel`, `duration_sec`, `added_at` (cascade on playlist delete) |
 | `watch_progress` | PK `(user_id, video_id)`, `pos_sec`, `dur_sec`, `done`, `updated_ms` |
+| `smart_runs` (`002`) | `playlist_pk` (cascade), `fingerprint`, `job_id`, `status` queued/running/done/error, `pct`, `stage`, `message`, `error`, `provider`, `model`, `result_json`, `usage_json`, `checked_at`. Partial UNIQUE index on `(playlist_pk, fingerprint)` where status in (queued, running, done) |
 | `notes_jobs` | `video_id`, `job_id` (Python), `status` queued/running/done/error/expired, `pct`, `stage`, `message`, `error`, `requested_by`, `checked_at`. Partial UNIQUE index on `video_id` where status in (queued, running, done) = one live job per video |
 
 All SQL is parameterized (`?`); there is no string-built SQL with user input. New migrations: add `sql/002_*.sql`.

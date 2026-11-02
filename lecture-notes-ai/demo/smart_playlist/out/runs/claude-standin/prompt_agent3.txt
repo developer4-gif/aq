@@ -1,0 +1,155 @@
+=== SYSTEM ===
+You are the Gap Analyst in a learning-playlist assistant. The playlist name is the learner's GOAL. The saved videos are the topics they cover so far. Compare them with what someone pursuing that goal needs.
+
+Rules:
+- List 8 to 12 `areas` a learner needs for this goal, from fundamentals to more advanced.
+- status: covered (a saved video teaches it), partial (touched on only briefly), missing (no saved video teaches it).
+- For covered or partial, `covered_by` must list the video_ids that teach it. Cite only ids you are given, and only if that video's topics really include the area. Missing areas have an empty `covered_by`.
+- priority: high | medium | low, how important the area is for the goal.
+- `suggestions`: for the missing or partial areas with the highest priority (at most 6), give a `search_query` a person could type into YouTube to find a good short video on exactly that area, and `kind` (overview | deep-dive | practice).
+- Videos that do not belong to the goal go in `off_goal` with a reason.
+Return ONE JSON object only.
+
+=== USER ===
+Goal: "System Design Interview Prep"
+
+Return JSON: {"areas":[{"area":"...","why":"one short sentence","status":"covered|partial|missing","covered_by":["video_id"],"priority":"high|medium|low"}],"suggestions":[{"topic":"...","reason":"...","search_query":"...","kind":"overview|deep-dive|practice"}],"off_goal":[{"video_id":"...","reason":"..."}]}
+
+VIDEO PROFILES:
+[
+ {
+  "video_id": "wh98s0XhMmQ",
+  "title": "Caching Pitfalls Every Developer Should Know",
+  "length": "6:38",
+  "level": "intermediate",
+  "summary": "Explains what caching is and then walks through common caching problems such as cache stampede and cache penetration, with ways to mitigate them.",
+  "topics": [
+   "Caching basics",
+   "Cache stampede",
+   "Cache penetration",
+   "Bloom filters",
+   "Cache prewarming"
+  ],
+  "prerequisites": [
+   "Databases",
+   "Redis basics"
+  ]
+ },
+ {
+  "video_id": "XP98YCr-iXQ",
+  "title": "What is Database Sharding?",
+  "length": "9:10",
+  "level": "intermediate",
+  "summary": "Introduces database sharding, the main sharding methods, and how to choose a good shard key.",
+  "topics": [
+   "Database sharding",
+   "Hashed sharding",
+   "Directory sharding",
+   "Shard key selection",
+   "Shard key cardinality"
+  ],
+  "prerequisites": [
+   "Databases",
+   "Horizontal scaling"
+  ]
+ },
+ {
+  "video_id": "BHqjEjzAicA",
+  "title": "CAP Theorem Simplified",
+  "length": "5:31",
+  "level": "intermediate",
+  "summary": "Explains the CAP theorem trade-offs between consistency and availability during a network partition, using bank and social media examples.",
+  "topics": [
+   "CAP theorem",
+   "Network partition",
+   "Consistency vs availability",
+   "Partition reconciliation",
+   "PACELC theorem"
+  ],
+  "prerequisites": [
+   "Distributed systems"
+  ]
+ },
+ {
+  "video_id": "U-G-mSd4KAE",
+  "title": "Learn Python DECORATORS in 7 minutes! 🎊",
+  "length": "7:23",
+  "level": "beginner",
+  "summary": "Teaches how to write and apply Python decorators using an ice cream function example.",
+  "topics": [
+   "Python decorators",
+   "Wrapper functions",
+   "Arguments and kwargs",
+   "Applying decorators"
+  ],
+  "prerequisites": [
+   "Python functions",
+   "Function arguments"
+  ]
+ },
+ {
+  "video_id": "i7twT3x5yv8",
+  "title": "System Design Interview: A Step-By-Step Guide",
+  "length": "9:53",
+  "level": "beginner",
+  "summary": "Presents a four-step framework for approaching a system design interview, from scoping through deep dive and wrap-up.",
+  "topics": [
+   "Interview framework",
+   "Establishing design scope",
+   "High-level design diagram",
+   "WebSocket considerations",
+   "Deep dive trade-offs"
+  ],
+  "prerequisites": [
+   "Basic system components"
+  ]
+ },
+ {
+  "video_id": "_gQaygjm_hg",
+  "title": "Good APIs Vs Bad APIs: 7 Tips for API Design",
+  "length": "5:46",
+  "level": "intermediate",
+  "summary": "Gives seven tips for designing good RESTful APIs, covering naming, idempotency, pagination, sorting and rate limiting (the excerpt is in Arabic).",
+  "topics": [
+   "Sorting query strings"
+  ],
+  "prerequisites": [
+   "REST basics",
+   "HTTP methods"
+  ]
+ },
+ {
+  "video_id": "sCR3SAVdyCc",
+  "title": "What is a Load Balancer?",
+  "length": "8:07",
+  "level": "beginner",
+  "summary": "Explains what a network load balancer is and how simple and smart algorithms like round robin and random select distribute traffic across application servers.",
+  "topics": [
+   "Network load balancer",
+   "Traffic distribution",
+   "Round robin",
+   "Random select",
+   "Shared database tier"
+  ],
+  "prerequisites": [
+   "Client-server basics"
+  ]
+ },
+ {
+  "video_id": "_Ss42Vb1SU4",
+  "title": "SQL vs. NoSQL Explained (in 4 Minutes)",
+  "length": "3:55",
+  "level": "beginner",
+  "summary": "Compares SQL and NoSQL databases, their strengths and weaknesses, to help choose a database in a system design interview.",
+  "topics": [
+   "SQL vs NoSQL",
+   "Scaling differences",
+   "ACID compliance",
+   "Peer-to-peer replication",
+   "Eventual consistency"
+  ],
+  "prerequisites": [
+   "Database basics"
+  ]
+ }
+]

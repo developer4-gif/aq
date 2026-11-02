@@ -32,6 +32,8 @@
     toastTimer = setTimeout(function () { toastsEl.textContent = ""; }, 7000);
   }
 
+  if (AQ.smart) AQ.smart.init({ toast: toast, announce: announce });   // smart.js (Smart arrange) uses the page's toast + live region
+
   function plural(n, one, many) { return n + " " + (n === 1 ? one : many); }
 
   /** Full-bleed cover: the first video's thumbnail fills the whole card, or an empty placeholder. */
@@ -483,9 +485,12 @@
     renBtn.addEventListener("click", function () { openPlaylistForm(p, renBtn); });
     var delBtn = button("Delete", { cls: "btn btn--ghost btn--danger", icon: "trash" });
     delBtn.addEventListener("click", function () { confirmDelete(p, delBtn); });
-    [addBtn, playBtn, renBtn, delBtn].forEach(function (b) { acts.appendChild(b); });
+    var smartBtn = AQ.smart ? AQ.smart.button(p) : null;     // "Smart arrange" (smart.js)
+    [addBtn, playBtn, smartBtn, renBtn, delBtn].forEach(function (b) { if (b) acts.appendChild(b); });
     head.appendChild(acts);
     view.appendChild(head);
+    var smartPanel = AQ.smart ? AQ.smart.panel(p) : null;    // learning path / progress, hidden by CSS while empty
+    if (smartPanel) view.appendChild(smartPanel);
 
     if (!p.videos.length) {
       var empty = el("div", "empty empty--inline");
@@ -499,7 +504,7 @@
       if (af) view.appendChild(af);
       var list = videoList(p);
       // split view: the list lives inside a shell that can morph it into a left nav (see split.js)
-      view.appendChild(AQ.split ? AQ.split.shell({ playlist: p, list: list, hide: [head, af], openId: route().notes }) : list);
+      view.appendChild(AQ.split ? AQ.split.shell({ playlist: p, list: list, hide: [head, af, smartPanel], openId: route().notes }) : list);
     }
   }
 

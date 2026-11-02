@@ -15,6 +15,8 @@ export function loadConfig(env = process.env, overrides = {}) {
     uiDir: env.UI_DIR || path.resolve(ROOT, "..", "lecture-notes-ui"),
     pyUrl: (env.PY_NOTES_URL || "http://127.0.0.1:5055").replace(/\/+$/, ""),
     pyProvider: env.PY_NOTES_PROVIDER || "groq",
+    pySmartProvider: env.PY_SMART_PROVIDER || "gemini",   // provider for smart playlist runs
+    pySmartModel: env.PY_SMART_MODEL || "",               // "" = the worker's default model for that provider
     allowRemotePy: env.ALLOW_REMOTE_PY === "1",
     requireMembership: env.NOTES_REQUIRE_MEMBERSHIP !== "0",   // notes can only be started for videos in the user's playlists
     bodyLimit: env.BODY_LIMIT || "256kb",

@@ -1,0 +1,470 @@
+{
+  "goal": "System Design Interview Prep",
+  "profiles": {
+    "wh98s0XhMmQ": {
+      "level": "intermediate",
+      "summary": "The video explains common caching problems and how to mitigate them.",
+      "topics": [
+        {
+          "name": "Cache Stampede",
+          "evidence": "Cache Stampede happens when many requests simultaneously hit the same expired cache entry"
+        },
+        {
+          "name": "Placeholder Values",
+          "evidence": "implement a placeholder value for non-existent keys"
+        }
+      ],
+      "prerequisites": [
+        "Caching basics",
+        "Redis"
+      ]
+    },
+    "XP98YCr-iXQ": {
+      "level": "intermediate",
+      "summary": "The video introduces database sharding concepts, methods, and shard‑key selection criteria.",
+      "topics": [
+        {
+          "name": "Sharding Definition",
+          "evidence": "sharding is simply splitting a large database into smaller pieces"
+        },
+        {
+          "name": "Range Sharding",
+          "evidence": "first range from A to I might contain significantly more customer names"
+        },
+        {
+          "name": "Shard‑Key Selection",
+          "evidence": "Good shard-key selection can evenly distribute data across multiple shards"
+        }
+      ],
+      "prerequisites": [
+        "Relational databases",
+        "Basic query performance"
+      ]
+    },
+    "BHqjEjzAicA": {
+      "level": "beginner",
+      "summary": "Explains the CAP theorem and its trade‑offs in distributed systems.",
+      "topics": [
+        {
+          "name": "Consistency definition",
+          "evidence": "Consistency refers to the property of a system"
+        },
+        {
+          "name": "Availability definition",
+          "evidence": "Availability refers to the ability of a system to respond"
+        },
+        {
+          "name": "Partition tolerance definition",
+          "evidence": "Partition tolerance refers to the ability of a system to continue operating"
+        },
+        {
+          "name": "Trade‑off choice",
+          "evidence": "system must choose between consistency and availability"
+        },
+        {
+          "name": "Usefulness of CAP",
+          "evidence": "CAP theorem useful? Yes, it is a useful tool"
+        }
+      ],
+      "prerequisites": [
+        "Distributed systems basics",
+        "Network fundamentals"
+      ]
+    },
+    "U-G-mSd4KAE": {
+      "level": "beginner",
+      "summary": "Shows how to create and use decorators to extend functions in Python.",
+      "topics": [
+        {
+          "name": "Decorator definition",
+          "evidence": "decorator is a function that extends the behavior of another function"
+        },
+        {
+          "name": "Passing base function",
+          "evidence": "pass the base function as an argument to the decorator"
+        },
+        {
+          "name": "Accepting arbitrary arguments",
+          "evidence": "wrapper function will accept any number of arguments and keyword arguments"
+        }
+      ],
+      "prerequisites": [
+        "Python functions",
+        "Basic syntax"
+      ]
+    },
+    "i7twT3x5yv8": {
+      "level": "intermediate",
+      "summary": "The video teaches a four‑step framework for tackling system design interviews.",
+      "topics": [
+        {
+          "name": "framework steps",
+          "evidence": "Step 1 - Understand the problem and establish design scope"
+        },
+        {
+          "name": "high‑level diagram",
+          "evidence": "lay out the high-level design diagram"
+        },
+        {
+          "name": "trade‑off discussion",
+          "evidence": "discuss the trade-offs of the solutions"
+        }
+      ],
+      "prerequisites": [
+        "basic system design concepts",
+        "interview etiquette"
+      ]
+    },
+    "_gQaygjm_hg": {
+      "level": "intermediate",
+      "summary": "The video presents best practices for designing reliable, clear, and scalable RESTful APIs.",
+      "topics": [],
+      "prerequisites": [
+        "understanding of REST principles",
+        "basic HTTP methods"
+      ]
+    },
+    "sCR3SAVdyCc": {
+      "level": "beginner",
+      "summary": "Explains what a network load balancer is and how it distributes traffic using common algorithms.",
+      "topics": [
+        {
+          "name": "Network Load Balancer",
+          "evidence": "what is a network load balancer?"
+        },
+        {
+          "name": "Round Robin Algorithm",
+          "evidence": "use an algorithm called Round Robin"
+        },
+        {
+          "name": "Random Selection Algorithm",
+          "evidence": "random select"
+        }
+      ],
+      "prerequisites": [
+        "basic networking"
+      ]
+    },
+    "_Ss42Vb1SU4": {
+      "level": "beginner",
+      "summary": "Compares SQL and NoSQL databases, covering their strengths, weaknesses, and scalability characteristics.",
+      "topics": [
+        {
+          "name": "SQL vs NoSQL",
+          "evidence": "databases are split into SQL and NoSQL types"
+        },
+        {
+          "name": "Scalability Differences",
+          "evidence": "SQL databases are vertically scalable, while NoSQL databases are horizontally scalable"
+        },
+        {
+          "name": "ACID Compliance",
+          "evidence": "SQL databases are ACID-compliant"
+        },
+        {
+          "name": "Eventual Consistency",
+          "evidence": "called eventual consistency"
+        }
+      ],
+      "prerequisites": [
+        "basic database concepts"
+      ]
+    }
+  },
+  "order": [
+    {
+      "video_id": "BHqjEjzAicA",
+      "reason": "Introduces CAP theorem, a core distributed systems concept for design trade‑offs"
+    },
+    {
+      "video_id": "sCR3SAVdyCc",
+      "reason": "Explains load balancers, essential for scaling services"
+    },
+    {
+      "video_id": "_Ss42Vb1SU4",
+      "reason": "Compares SQL and NoSQL, giving baseline database knowledge"
+    },
+    {
+      "video_id": "i7twT3x5yv8",
+      "reason": "Provides the interview framework to structure any system design answer"
+    },
+    {
+      "video_id": "_gQaygjm_hg",
+      "reason": "Covers API design best practices, a key component of many system designs"
+    },
+    {
+      "video_id": "XP98YCr-iXQ",
+      "reason": "Delves into sharding, an advanced scaling technique building on database basics"
+    },
+    {
+      "video_id": "wh98s0XhMmQ",
+      "reason": "Discusses caching pitfalls, a performance optimization that follows sharding and load balancing"
+    }
+  ],
+  "unplaced": [
+    {
+      "video_id": "U-G-mSd4KAE",
+      "reason": "Focuses on Python decorators, unrelated to system design interview preparation"
+    }
+  ],
+  "path_summary": "Start with core distributed fundamentals, add networking and database basics, learn the interview framework, then deepen into API design, sharding, and caching.",
+  "areas": [
+    {
+      "area": "System Design Interview Framework",
+      "why": "Provides a structured approach to answer design questions",
+      "status": "covered",
+      "covered_by": [
+        "i7twT3x5yv8"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "Load Balancing",
+      "why": "Distributes traffic to ensure availability and scalability",
+      "status": "covered",
+      "covered_by": [
+        "sCR3SAVdyCc"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "Caching Strategies",
+      "why": "Improves latency and reduces load on backend services",
+      "status": "partial",
+      "covered_by": [
+        "wh98s0XhMmQ"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "Database Sharding",
+      "why": "Enables horizontal scaling of data stores",
+      "status": "covered",
+      "covered_by": [
+        "XP98YCr-iXQ"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "CAP Theorem & Trade‑offs",
+      "why": "Fundamental limits of distributed systems",
+      "status": "covered",
+      "covered_by": [
+        "BHqjEjzAicA"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "SQL vs NoSQL Choices",
+      "why": "Helps select appropriate storage based on requirements",
+      "status": "covered",
+      "covered_by": [
+        "_Ss42Vb1SU4"
+      ],
+      "priority": "medium"
+    },
+    {
+      "area": "API Design Principles",
+      "why": "Ensures clear, scalable, and maintainable interfaces",
+      "status": "missing",
+      "covered_by": [],
+      "priority": "medium"
+    },
+    {
+      "area": "Consistency Models (Strong, Eventual)",
+      "why": "Critical for data correctness across replicas",
+      "status": "missing",
+      "covered_by": [],
+      "priority": "high"
+    },
+    {
+      "area": "Monitoring & Alerting",
+      "why": "Detects issues and maintains system health",
+      "status": "missing",
+      "covered_by": [],
+      "priority": "high"
+    },
+    {
+      "area": "Security & Authentication",
+      "why": "Protects data and services from threats",
+      "status": "missing",
+      "covered_by": [],
+      "priority": "medium"
+    },
+    {
+      "area": "Scalability Patterns (e.g., Partitioning, Replication)",
+      "why": "Guides design for growth",
+      "status": "partial",
+      "covered_by": [
+        "XP98YCr-iXQ",
+        "_Ss42Vb1SU4"
+      ],
+      "priority": "medium"
+    },
+    {
+      "area": "Performance Optimization (Latency, Throughput)",
+      "why": "Ensures responsive user experience",
+      "status": "missing",
+      "covered_by": [],
+      "priority": "medium"
+    }
+  ],
+  "suggestions": [
+    {
+      "topic": "API Design Best Practices for System Design Interviews",
+      "reason": "Missing area with medium priority",
+      "kind": "overview",
+      "search_query": "API design best practices system design interview",
+      "candidates": [
+        {
+          "id": "7nm1pYuKAhY",
+          "duration_sec": 722,
+          "channel": "Software Developer Diaries",
+          "title": "Deep Dive into REST API Design and Implementation Best Practices",
+          "url": "https://www.youtube.com/watch?v=7nm1pYuKAhY"
+        },
+        {
+          "id": "pJ83mmqcvoQ",
+          "duration_sec": 600,
+          "channel": "ByteMonk",
+          "title": "9 Must-Know REST API Design Principles for Developers",
+          "url": "https://www.youtube.com/watch?v=pJ83mmqcvoQ"
+        }
+      ]
+    },
+    {
+      "topic": "Consistency Models in Distributed Systems",
+      "reason": "High priority missing area",
+      "kind": "deep-dive",
+      "search_query": "consistency models strong vs eventual distributed systems",
+      "candidates": [
+        {
+          "id": "WZqGS-wczaY",
+          "duration_sec": 417,
+          "channel": "Shiran Afergan",
+          "title": "Data Consistency | Strong Consistency vs. Eventual Consistency | System Design for Beginners",
+          "url": "https://www.youtube.com/watch?v=WZqGS-wczaY"
+        },
+        {
+          "id": "qg2MNeB9n7k",
+          "duration_sec": 514,
+          "channel": "Saksham Vedi",
+          "title": "Consistency Models in Distributed Databases Explained | Strong Consistency vs Eventual Consistency",
+          "url": "https://www.youtube.com/watch?v=qg2MNeB9n7k"
+        }
+      ]
+    },
+    {
+      "topic": "Monitoring and Alerting for Scalable Systems",
+      "reason": "High priority missing area",
+      "kind": "overview",
+      "search_query": "monitoring alerting best practices scalable systems",
+      "candidates": [
+        {
+          "id": "cNk-ba5d58k",
+          "duration_sec": 376,
+          "channel": "SystemDR - Scalable System Design ",
+          "title": "Alert Query & Management: Best Practices for Monitoring & Incident Response #fullstack #alert",
+          "url": "https://www.youtube.com/watch?v=cNk-ba5d58k"
+        },
+        {
+          "id": "QYQzBYzca7U",
+          "duration_sec": 481,
+          "channel": "Royal Research - Official",
+          "title": "Kafka Monitoring & Troubleshooting Guide: Metrics, Alerts, and Production Best Practices",
+          "url": "https://www.youtube.com/watch?v=QYQzBYzca7U"
+        }
+      ]
+    },
+    {
+      "topic": "Security Fundamentals for System Design",
+      "reason": "Medium priority missing area",
+      "kind": "overview",
+      "search_query": "security authentication design patterns system design interview",
+      "candidates": [
+        {
+          "id": "uj_4vxm9u90",
+          "duration_sec": 1042,
+          "channel": "Interview Pen",
+          "title": "Design a Simple Authentication System | System Design Interview Prep",
+          "url": "https://www.youtube.com/watch?v=uj_4vxm9u90"
+        },
+        {
+          "id": "7-6F3b14baA",
+          "duration_sec": 385,
+          "channel": "Hello Interview",
+          "title": "API Gateways in System Design Interviews w/ Ex-Meta Staff Engineer",
+          "url": "https://www.youtube.com/watch?v=7-6F3b14baA"
+        }
+      ]
+    },
+    {
+      "topic": "Performance Optimization Techniques (latency, throughput)",
+      "reason": "Medium priority missing area",
+      "kind": "deep-dive",
+      "search_query": "performance optimization latency throughput system design",
+      "candidates": [
+        {
+          "id": "ryzF1vO7N4w",
+          "duration_sec": 162,
+          "channel": "System Design School",
+          "title": "Throughput vs Latency | System Design",
+          "url": "https://www.youtube.com/watch?v=ryzF1vO7N4w"
+        },
+        {
+          "id": "0ng591Xn_Y0",
+          "duration_sec": 609,
+          "channel": "Dev Rakesh Kumar Singh",
+          "title": "Latency vs Throughput Explained in 10 Minutes | System Design",
+          "url": "https://www.youtube.com/watch?v=0ng591Xn_Y0"
+        }
+      ]
+    },
+    {
+      "topic": "Scalability Patterns: Partitioning and Replication",
+      "reason": "Medium priority partially covered area",
+      "kind": "overview",
+      "search_query": "scalability patterns partitioning replication system design",
+      "candidates": [
+        {
+          "id": "7Av872iqFWA",
+          "duration_sec": 244,
+          "channel": "Clystron",
+          "title": "Why Postgres Scaling Fails Without Proper Sharding and Replication Setup | Clystron",
+          "url": "https://www.youtube.com/watch?v=7Av872iqFWA"
+        },
+        {
+          "id": "_1IKwnbscQU",
+          "duration_sec": 522,
+          "channel": "ByteByteGo",
+          "title": "7 Must-know Strategies to Scale Your Database",
+          "url": "https://www.youtube.com/watch?v=_1IKwnbscQU"
+        }
+      ]
+    }
+  ],
+  "off_goal": [
+    {
+      "video_id": "U-G-mSd4KAE",
+      "reason": "Focuses on Python decorators, unrelated to system design"
+    },
+    {
+      "video_id": "_gQaygjm_hg",
+      "reason": "API design video lacks explicit topics, cannot verify coverage"
+    }
+  ],
+  "checks": [
+    "Agent 1: 23 of 34 claimed topics were backed by a quote found in the transcript; 11 unsupported topic(s) removed.",
+    "Agent 2: every video appears exactly once.",
+    "Agent 3: every 'covered' claim cites a real video from the playlist.",
+    "Suggestions: 12 real YouTube candidates found for 6 suggested topics (candidates are search results, not yet vetted against the transcript)."
+  ],
+  "stats": {
+    "topics_claimed": 34,
+    "topics_grounded": 23,
+    "videos_readded_to_order": 0,
+    "areas_downgraded_to_missing": 0,
+    "suggestions": 6,
+    "candidates_found": 12
+  }
+}

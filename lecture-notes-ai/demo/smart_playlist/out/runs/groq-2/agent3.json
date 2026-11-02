@@ -1,0 +1,151 @@
+{
+  "areas": [
+    {
+      "area": "System Design Interview Framework",
+      "why": "Provides a structured approach to answer design questions",
+      "status": "covered",
+      "covered_by": [
+        "i7twT3x5yv8"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "Load Balancing",
+      "why": "Distributes traffic to ensure availability and scalability",
+      "status": "covered",
+      "covered_by": [
+        "sCR3SAVdyCc"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "Caching Strategies",
+      "why": "Improves latency and reduces load on backend services",
+      "status": "partial",
+      "covered_by": [
+        "wh98s0XhMmQ"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "Database Sharding",
+      "why": "Enables horizontal scaling of data stores",
+      "status": "covered",
+      "covered_by": [
+        "XP98YCr-iXQ"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "CAP Theorem & Trade‑offs",
+      "why": "Fundamental limits of distributed systems",
+      "status": "covered",
+      "covered_by": [
+        "BHqjEjzAicA"
+      ],
+      "priority": "high"
+    },
+    {
+      "area": "SQL vs NoSQL Choices",
+      "why": "Helps select appropriate storage based on requirements",
+      "status": "covered",
+      "covered_by": [
+        "_Ss42Vb1SU4"
+      ],
+      "priority": "medium"
+    },
+    {
+      "area": "API Design Principles",
+      "why": "Ensures clear, scalable, and maintainable interfaces",
+      "status": "missing",
+      "covered_by": [],
+      "priority": "medium"
+    },
+    {
+      "area": "Consistency Models (Strong, Eventual)",
+      "why": "Critical for data correctness across replicas",
+      "status": "missing",
+      "covered_by": [],
+      "priority": "high"
+    },
+    {
+      "area": "Monitoring & Alerting",
+      "why": "Detects issues and maintains system health",
+      "status": "missing",
+      "covered_by": [],
+      "priority": "high"
+    },
+    {
+      "area": "Security & Authentication",
+      "why": "Protects data and services from threats",
+      "status": "missing",
+      "covered_by": [],
+      "priority": "medium"
+    },
+    {
+      "area": "Scalability Patterns (e.g., Partitioning, Replication)",
+      "why": "Guides design for growth",
+      "status": "partial",
+      "covered_by": [
+        "XP98YCr-iXQ",
+        "_Ss42Vb1SU4"
+      ],
+      "priority": "medium"
+    },
+    {
+      "area": "Performance Optimization (Latency, Throughput)",
+      "why": "Ensures responsive user experience",
+      "status": "missing",
+      "covered_by": [],
+      "priority": "medium"
+    }
+  ],
+  "suggestions": [
+    {
+      "topic": "API Design Best Practices for System Design Interviews",
+      "reason": "Missing area with medium priority",
+      "search_query": "API design best practices system design interview",
+      "kind": "overview"
+    },
+    {
+      "topic": "Consistency Models in Distributed Systems",
+      "reason": "High priority missing area",
+      "search_query": "consistency models strong vs eventual distributed systems",
+      "kind": "deep-dive"
+    },
+    {
+      "topic": "Monitoring and Alerting for Scalable Systems",
+      "reason": "High priority missing area",
+      "search_query": "monitoring alerting best practices scalable systems",
+      "kind": "overview"
+    },
+    {
+      "topic": "Security Fundamentals for System Design",
+      "reason": "Medium priority missing area",
+      "search_query": "security authentication design patterns system design interview",
+      "kind": "overview"
+    },
+    {
+      "topic": "Performance Optimization Techniques (latency, throughput)",
+      "reason": "Medium priority missing area",
+      "search_query": "performance optimization latency throughput system design",
+      "kind": "deep-dive"
+    },
+    {
+      "topic": "Scalability Patterns: Partitioning and Replication",
+      "reason": "Medium priority partially covered area",
+      "search_query": "scalability patterns partitioning replication system design",
+      "kind": "overview"
+    }
+  ],
+  "off_goal": [
+    {
+      "video_id": "U-G-mSd4KAE",
+      "reason": "Focuses on Python decorators, unrelated to system design"
+    },
+    {
+      "video_id": "_gQaygjm_hg",
+      "reason": "API design video lacks explicit topics, cannot verify coverage"
+    }
+  ]
+}

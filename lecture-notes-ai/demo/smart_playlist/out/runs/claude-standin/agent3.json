@@ -1,0 +1,25 @@
+{"areas":[
+{"area":"Interview framework and scoping","why":"A structured approach (scope, high-level design, deep dive, wrap-up) keeps the interview on track.","status":"covered","covered_by":["i7twT3x5yv8"],"priority":"high"},
+{"area":"Requirements and back-of-the-envelope estimation","why":"Estimating traffic, storage and bandwidth drives every sizing decision in a design.","status":"partial","covered_by":["i7twT3x5yv8"],"priority":"high"},
+{"area":"Load balancing and horizontal scaling","why":"Spreading traffic across servers is the first step to scaling and availability.","status":"covered","covered_by":["sCR3SAVdyCc"],"priority":"high"},
+{"area":"Choosing a database (SQL vs NoSQL)","why":"Picking the right data store and justifying the trade-offs is asked in almost every design.","status":"covered","covered_by":["_Ss42Vb1SU4"],"priority":"high"},
+{"area":"Caching strategies and failure modes","why":"Caching cuts latency and load, but stampedes and penetration must be handled.","status":"covered","covered_by":["wh98s0XhMmQ"],"priority":"high"},
+{"area":"Database sharding and partitioning","why":"Splitting data across nodes is how large systems scale writes and storage.","status":"covered","covered_by":["XP98YCr-iXQ"],"priority":"high"},
+{"area":"Replication, consistency and CAP trade-offs","why":"Distributed designs must reason about consistency versus availability under partitions.","status":"covered","covered_by":["BHqjEjzAicA","_Ss42Vb1SU4"],"priority":"high"},
+{"area":"API design","why":"Clean, scalable interfaces (naming, idempotency, pagination) are part of most designs.","status":"partial","covered_by":["_gQaygjm_hg"],"priority":"medium"},
+{"area":"Message queues and asynchronous processing","why":"Queues decouple services and absorb traffic spikes.","status":"missing","covered_by":[],"priority":"high"},
+{"area":"Rate limiting and reliability patterns","why":"Protecting services from overload and failures is a common deep-dive topic.","status":"missing","covered_by":[],"priority":"medium"},
+{"area":"CDN and content delivery","why":"Serving static and media content near users reduces latency and origin load.","status":"missing","covered_by":[],"priority":"medium"},
+{"area":"Worked case studies (e.g. URL shortener, news feed, chat)","why":"Practicing full end-to-end designs ties all the components together.","status":"missing","covered_by":[],"priority":"high"}
+],
+"suggestions":[
+{"topic":"Message queues and asynchronous processing","reason":"High-priority component with no coverage in the playlist.","search_query":"message queue explained system design Kafka RabbitMQ","kind":"overview"},
+{"topic":"Worked case studies","reason":"Applying the framework to full designs is the best interview practice.","search_query":"system design interview design a URL shortener walkthrough","kind":"practice"},
+{"topic":"Back-of-the-envelope estimation","reason":"Capacity estimation is only touched on through scoping and is needed to size designs.","search_query":"back of the envelope estimation system design interview","kind":"deep-dive"},
+{"topic":"Rate limiting and reliability patterns","reason":"Common follow-up topic with no coverage so far.","search_query":"rate limiter system design token bucket explained","kind":"deep-dive"},
+{"topic":"CDN and content delivery","reason":"Key for latency and scaling static content, currently missing.","search_query":"what is a CDN content delivery network system design","kind":"overview"},
+{"topic":"API design","reason":"Only a small part of the API design video is captured, so core API concepts remain thin.","search_query":"REST API design best practices pagination idempotency","kind":"deep-dive"}
+],
+"off_goal":[
+{"video_id":"U-G-mSd4KAE","reason":"A Python decorators tutorial, unrelated to system design interview preparation."}
+]}

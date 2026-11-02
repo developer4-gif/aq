@@ -29,6 +29,10 @@ from urllib.parse import parse_qs, urlparse
 
 import requests
 
+from . import cache as disk_cache
+
+TRANSCRIPT_CACHE_DAYS = 30  # a video's captions rarely change; auto-captions may improve, so not forever
+
 __all__ = [
     "IngestError",
     "parse_video_id",
@@ -799,6 +803,10 @@ def get_transcript(url: str, *, groq_key: str | None = None, progress=None) -> d
     """Fetch and clean the transcript for a YouTube video. Raises IngestError."""
     video_id = parse_video_id(url)
     _progress(progress, "transcript", 3, "Checking the video link...")
+    saved = disk_cache.get("transcript", video_id, max_age_sec=TRANSCRIPT_CACHE_DAYS * 86400)
+    if isinstance(saved, dict) and saved.get("segments") and saved.get("video_id") == video_id:
+        _progress(progress, "transcript", 100, f"Transcript ready ({len(saved['segments'])} segments, saved earlier).")
+        return saved
     cache: dict = {}
     groq_key = (groq_key or "").strip() or None
 
@@ -844,7 +852,7 @@ def get_transcript(url: str, *, groq_key: str | None = None, progress=None) -> d
     if duration is None and est_end:
         duration = int(round(est_end))
     _progress(progress, "transcript", 100, f"Transcript ready ({len(segments)} segments).")
-    return {
+    out = {
         "video_id": video_id,
         "url": _canonical_url(video_id),
         "title": title,
@@ -854,6 +862,8 @@ def get_transcript(url: str, *, groq_key: str | None = None, progress=None) -> d
         "source": source,
         "segments": segments,
     }
+    disk_cache.put("transcript", video_id, out)
+    return out
 
 
 def _final_message(failures: list[_Fail], whisper_fail: _Fail | None, had_key: bool) -> str:

@@ -1,0 +1,20 @@
+{
+  "name": "lecture-notes-ui",
+  "version": "1.0.0",
+  "description": "The in-app **Playlists** screen: an all-black app UI where you group YouTube lectures into playlists, watch them in order and request hand-drawn notes. Plain HTML/CSS/JS, no build step, no npm.",
+  "main": "api.js",
+  "scripts": {
+    "lint" : "eslint .",
+    "lint-fix" : "eslint . --fix",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0"
+  }
+}

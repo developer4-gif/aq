@@ -139,7 +139,7 @@ def test_gemini_request_shape(monkeypatch):
     rec = install(monkeypatch, [FakeResp(200, ok_payload("gemini", json.dumps(full_notes())))])
     notes = run("gemini")
     c = rec.calls[0]
-    assert c["url"] == "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+    assert c["url"] == "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent"
     assert KEYS["gemini"] not in c["url"] and "key=" not in c["url"]
     assert c["headers"]["x-goog-api-key"] == KEYS["gemini"]
     assert "Authorization" not in c["headers"]
@@ -149,7 +149,7 @@ def test_gemini_request_shape(monkeypatch):
     assert body["systemInstruction"]["parts"][0]["text"]
     assert body["contents"][0]["role"] == "user"
     assert c["timeout"][0] and c["timeout"][1]
-    assert notes["meta"]["model"] == "gemini/gemini-2.5-flash"
+    assert notes["meta"]["model"] == "gemini/gemini-3.5-flash-lite"
     assert len(rec.calls) == 1
 
 

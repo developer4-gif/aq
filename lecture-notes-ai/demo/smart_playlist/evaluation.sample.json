@@ -1,0 +1,29 @@
+{
+  "generated": "2026-11-02T12:00:00",
+  "gold_note": "PROVISIONAL reference answers written by the assistant, not by a domain expert.",
+  "runs": [
+    {
+      "label": "groq-1", "provider": "groq", "model": "openai/gpt-oss-120b", "kind": "live",
+      "metrics": [
+        {"key": "grounding_rate", "group": "Grounding", "label": "Topics backed by a transcript quote", "value": 0.9, "display": "36 / 40 (90%)", "unit": "ratio", "direction": "higher", "detail": "Share of topics whose quoted evidence is found in the transcript excerpt."},
+        {"key": "order_constraints_met", "group": "Arrangement", "label": "Order rules satisfied", "value": 1.0, "display": "8 / 8 (100%)", "unit": "ratio", "direction": "higher", "detail": "Share of the reference before/after rules that the suggested order respects."},
+        {"key": "off_goal_detected", "group": "Arrangement", "label": "Off-topic video set aside", "value": 1, "display": "yes", "unit": "text", "direction": "higher", "detail": "The injected Python decorators video must not be in the learning path."},
+        {"key": "gap_recall", "group": "Coverage", "label": "Expected gaps found", "value": 0.75, "display": "3 / 4 (75%)", "unit": "ratio", "direction": "higher", "detail": "Reference gaps that appear as missing or partial."},
+        {"key": "false_covered", "group": "Coverage", "label": "Gaps wrongly called covered", "value": 0, "display": "0", "unit": "count", "direction": "lower", "detail": "Reference gaps marked as covered."},
+        {"key": "candidates_found", "group": "Suggestions", "label": "Real videos found for suggestions", "value": 12, "display": "12 for 6 topics", "unit": "count", "direction": "higher", "detail": "Search results that are real, 2 to 25 minutes long and not already in the playlist."},
+        {"key": "total_tokens", "group": "Burn", "label": "Tokens used", "value": 21000, "display": "21,000", "unit": "tokens", "direction": "lower", "detail": "Prompt + completion + reasoning tokens reported by the provider API."},
+        {"key": "wall_seconds", "group": "Burn", "label": "Wall-clock time", "value": 95.0, "display": "95 s", "unit": "seconds", "direction": "lower", "detail": "Total run time including rate-limit waiting."}
+      ]
+    },
+    {
+      "label": "claude-standin", "provider": "claude (stand-in)", "model": "Claude Sonnet subagents", "kind": "stand-in",
+      "metrics": [
+        {"key": "grounding_rate", "group": "Grounding", "label": "Topics backed by a transcript quote", "value": 0.897, "display": "35 / 39 (90%)", "unit": "ratio", "direction": "higher", "detail": "Share of topics whose quoted evidence is found in the transcript excerpt."},
+        {"key": "total_tokens", "group": "Burn", "label": "Tokens used", "value": null, "display": "n/a (stand-in)", "unit": "tokens", "direction": "info", "detail": "Not comparable: subagent totals include their own file reading."}
+      ]
+    }
+  ],
+  "comparisons": [
+    {"a": "groq-1", "b": "claude-standin", "key": "order_kendall_tau", "group": "Agreement", "label": "Order agreement (Kendall tau)", "value": 0.71, "display": "0.71", "detail": "1 = identical order, -1 = reversed, over videos both placed."}
+  ]
+}

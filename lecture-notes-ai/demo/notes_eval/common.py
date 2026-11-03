@@ -212,6 +212,8 @@ def classify_error(msg: str) -> str:
         return "quota_daily"
     if "quota" in m or "rate limit" in m or "limit (asks to wait" in m:
         return "quota_429"
+    if "output limit" in m or "token limit" in m:
+        return "output_truncated"
     if "timeout" in m or "network error" in m or "could not reach" in m:
         return "timeout"
     if "json" in m or "could not be turned into notes" in m:

@@ -262,6 +262,8 @@ def aggregate() -> dict:
                     continue
                 n = r.get("run")
                 tm = r.get("timing") or {}
+                if r.get("status") == "error":
+                    r["error_type"] = C.classify_error(r.get("error") or "")
                 row = {"contestant": cid, "model": r.get("model"), "video": vid, "run": n, "status": r.get("status"),
                        "latency_sec": r.get("latency_sec"), "error_type": r.get("error_type"),
                        "error": r.get("error"), "schema_valid": r.get("schema_valid"),

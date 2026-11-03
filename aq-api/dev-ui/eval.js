@@ -207,7 +207,7 @@
     ["Output tokens / sec", "Output tokens reported by the provider's usage field (Gemini usageMetadata incl. thinking tokens; OpenAI-style usage.completion_tokens) divided by time spent inside HTTP calls. 'not measured' if the provider reported no usage."],
     ["Wait share", "Share of the run spent in the engine's own sleeps (client-side token pacer + 429/5xx retry back-off), measured by wrapping the engine's sleep function."],
     ["Success rate", "Runs that returned notes / runs attempted. Runs skipped after a hard daily quota are not counted as attempts but are listed as errors in the run log."],
-    ["Error types", "quota_daily (provider says daily cap reached), quota_429 (rate limit after retries), timeout (network/timeout), invalid_json (model output not parseable into notes), server_5xx, config, other."],
+    ["Error types", "quota_daily (provider says daily cap reached), quota_429 (rate limit after retries), timeout (network/timeout), invalid_json (model output not parseable into notes), output_truncated (model hit its output-token limit), server_5xx, config, other."],
     ["Schema validity", "Share of successful runs whose output passes notes_schema.validate_notes (the engine already enforces this, so it is a sanity check)."],
     ["Consistency", "Population standard deviation of the judge's overall score between the 2 runs of the same video, averaged over videos. Lower = more repeatable."],
     ["Coverage / recall", "Share of the video's 12-15 gold key facts that the judge says the notes state (paraphrase allowed)."],

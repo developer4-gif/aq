@@ -43,7 +43,8 @@
     svg.appendChild(p);
     return svg;
   }
-  function safeUrl(s) { return typeof s === "string" && /^https?:\/\//i.test(s) ? s : ""; }
+  // absolute http(s) URLs, or same-origin paths ("/api/v1/..." when the UI is served by aq-api); never "//host" or other schemes
+  function safeUrl(s) { return typeof s === "string" && (/^https?:\/\//i.test(s) || /^\/(?!\/)/.test(s)) ? s : ""; }
 
   function mount(container, video, opts) {
     opts = opts || {};

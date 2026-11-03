@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AQ App Flow</title>
+<link rel="stylesheet" href="dev.css">
+<script src="flow.js" defer></script>
+</head>
+<body class="flow">
+<header class="dev-bar">
+  <a class="brand" href="index.html">AQ Learning <small>developer</small></a>
+  <nav><a href="index.html">Hub</a><a href="flow.html" aria-current="page">Flow</a><a href="tracker.html">Tracker</a></nav>
+</header>
+<div class="flow-main">
+  <div class="stage">
+    <canvas id="scene" aria-label="3D architecture diagram. Use the node list or click nodes for details."></canvas>
+    <div class="live-box">
+      <button class="btn" id="liveBtn" aria-pressed="false">Live</button>
+      <span class="pill" id="liveStatus"><span class="dot"></span><span>demo mode</span></span>
+    </div>
+    <div class="hint">Drag to orbit, wheel to zoom, click a node</div>
+    <div class="controls">
+      <label class="sr-only" for="flowSel">Flow</label>
+      <select id="flowSel"></select>
+      <button class="btn" id="prevBtn" aria-label="Previous step">Prev</button>
+      <button class="btn" id="playBtn" aria-pressed="false">Play</button>
+      <button class="btn" id="nextBtn" aria-label="Next step">Step</button>
+      <button class="btn" id="resetBtn">Reset view</button>
+      <div class="caption" aria-live="polite"><span class="step-n" id="stepN"></span><span id="stepText"></span></div>
+    </div>
+  </div>
+  <aside class="side" id="side" aria-live="polite">
+    <button class="btn close" id="closeBtn" aria-label="Close details">Close</button>
+    <div class="kind" id="sKind">Overview</div>
+    <h2 id="sTitle">How AQ Learning works</h2>
+    <p class="muted" id="sDesc">Four layers, front to back: the browser client, the Node aq-api server with SQLite, the Python worker with notes_engine, and external services. Pick a flow and press Play, or click any node.</p>
+    <dl id="sDl"></dl>
+    <div class="log" id="log" hidden></div>
+  </aside>
+</div>
+</body>
+</html>

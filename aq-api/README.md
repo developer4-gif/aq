@@ -133,3 +133,37 @@ The built-in local user can be migrated by setting `external_id` on row 1 to the
 - `notes.js` uses `/api/v1/notes/*` when the API is available (server-side cache, one job per video), else talks to `:5055` directly. `importpl.js` uses `/api/v1/import/youtube` in the same way.
 
 Conflict policy: the server wins on start when nothing is pending; local wins when there are unsent (offline) edits.
+
+## Developer tracker (`/dev`)
+
+Local-only debugging pages and JSON, on by default (the service is loopback-only); `AQ_DEV_TOOLS=0` turns it off and `/dev/*` returns 404.
+Same host guard as everything else; `/dev` pages get their own stricter CSP (`script-src 'self'`, no inline, no external origins).
+
+- `/dev/tracker.html` - live requests (filter by layer/status/text), pipeline events, jobs, service health + counts, recent errors (polls every 2 s).
+- `GET /dev/api/overview` - api/worker health (`/api/health` on the worker), counts of playlists, videos, notes and smart states, last 10 errors.
+- `GET /dev/api/requests?since=<seq>&limit=<n<=500>[&include_dev=1]` - in-memory ring buffer (last 2000) of `{seq, ts, method, path, status, ms, layer}`;
+  `layer` is `ui`, `api`, `worker` (calls this service makes to Python, status 0 = unreachable) or `dev` (hidden unless `include_dev=1`).
+- `GET /dev/api/events?since=<seq>` - notes job / smart run changes `{seq, ts, kind, jobId, videoId, playlistId, from, to, stage, pct}` (public states: queued/running/ready/error/none).
+- `GET /dev/api/jobs` - the latest 50 notes jobs and smart runs from SQLite.
+
+Only method, masked path (no query string, ids as `:id`), status and timing are kept - never headers, cookies, bodies or query strings.
+Buffers live in memory and reset when the service restarts (`last` drops; clients should start again from 0).
+
+**Persistent logs.** Every request entry (except `layer: dev`, i.e. the tracker's own polling) and every pipeline event is also appended to
+`data/devlogs/requests-YYYY-MM-DD.jsonl` / `events-YYYY-MM-DD.jsonl` (UTC day, same redacted fields as above). Writes are buffered and
+flushed asynchronously once per second (and synchronously on exit); files older than `AQ_DEVLOG_DAYS` (default 14) are deleted at startup.
+`AQ_DEVLOG_DIR` moves the folder, `AQ_DEVLOG_DIR=` (empty) turns persistence off (history endpoints then return 404). `data/devlogs/` is git-ignored.
+`seq` restarts with the process, so it is unique only within one run.
+
+- `GET /dev/api/history/days` - `{keepDays, items:[{date, requests, events, bytes}]}` newest first.
+- `GET /dev/api/history?type=requests|events&date=YYYY-MM-DD&q=&layer=&status=&limit=<=1000&offset=` - search one day, newest first,
+  `{type, date, total, offset, limit, items}`. Requests: `layer` ui/api/worker, `status` first digit (`2`..`5`) or `0`; events: `layer` = kind (notes/smart), `status` = new state.
+- `GET /dev/api/export?type=..&date=..&format=csv|jsonl` (+ same filters) - download (`Content-Disposition: attachment`); CSV is RFC 4180, cells starting with `= + - @` get a leading `'`.
+- `GET /dev/api/stats?date=&layer=` - `{total, errors, errorRate, p50, p95, max, paths:[{layer, method, path, count, errors, errorRate, p50, p95, max}], hours:[{hour, count, errors} x24]}`;
+  nearest-rank percentiles; an error is status 0, 5xx or 4xx (except UI 404s); hours are UTC.
+- `GET /dev/api/logs/api|worker?tail=<n<=2000>[&run=prev]` - last N lines of the service console output captured by `start-all.ps1`
+  (`../.run/api.out.log`, `api.err.log`, `ai.out.log`, `ai.err.log`; `AQ_RUN_DIR` overrides the folder) as `{service, run, tail, streams:{out, err}}`
+  (each `{size, mtime, lines}` or `null` if not captured). Lines are redacted: `gsk_`, `AIza`, `nvapi-`, `hf_`, `xai-`, `sk-` keys, `Bearer`/`Basic` tokens and
+  `key=` / `token=` / `api_key:` style values become `***`. `run=prev` reads `*.prev.log`, the previous run kept by start-all.ps1.
+
+The tracker page has matching **History**, **Stats** (hourly SVG chart + per-path table) and **Service logs** (auto-refresh every 3 s, pause, level colouring) tabs.

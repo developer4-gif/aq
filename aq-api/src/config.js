@@ -21,7 +21,11 @@ export function loadConfig(env = process.env, overrides = {}) {
     requireMembership: env.NOTES_REQUIRE_MEMBERSHIP !== "0",   // notes can only be started for videos in the user's playlists
     bodyLimit: env.BODY_LIMIT || "256kb",
     log: env.LOG !== "0",
-    rate: {                                              // per client IP, fixed window
+    devTools: env.AQ_DEV_TOOLS !== "0",                  // /dev tracker (local only); AQ_DEV_TOOLS=0 turns it off (404)
+    devLogDir: env.AQ_DEVLOG_DIR ?? path.join(ROOT, "data", "devlogs"),   // persistent tracker JSONL; "" = off
+    devLogDays: int(env.AQ_DEVLOG_DAYS, 14),
+    runDir: env.AQ_RUN_DIR ?? path.resolve(ROOT, "..", ".run"),          // start-all.ps1 service console logs
+    rate: {                                           // per client IP, fixed window
       general: { max: int(env.RATE_LIMIT_PER_MIN, 600), windowMs: 60_000 },
       heavy: { max: int(env.RATE_LIMIT_HEAVY_PER_MIN, 20), windowMs: 60_000 }   // starting notes / YouTube imports
     },

@@ -17,7 +17,8 @@ const short = (s, n = 300) => String(s ?? "").replace(/[\u0000-\u001f]/g, " ").s
 
 export const fingerprintOf = (goal, ids) => createHash("sha256").update(JSON.stringify([goal, [...ids].sort()])).digest("hex");
 
-export function createSmartService({ db, repo, py, config, clock = Date.now }) {
+export function createSmartService({ db, repo, py, config, clock = Date.now, onChange = null }) {
+  const slugOf = (pk) => (db.prepare("SELECT slug FROM playlists WHERE pk = ?").get(pk) || {}).slug ?? null;
   const N = config.notes;
   const locks = new Map();           // playlist pk -> promise chain
 
@@ -34,7 +35,9 @@ export function createSmartService({ db, repo, py, config, clock = Date.now }) {
 
   function setRow(id, f) {
     const keys = Object.keys(f);
+    const before = onChange && byId(id);
     db.prepare(`UPDATE smart_runs SET ${keys.map((k) => k + " = ?").join(", ")}, updated_at = ? WHERE id = ?`).run(...keys.map((k) => f[k]), nowIso(), id);
+    if (onChange) { const after = byId(id); onChange("smart", { playlistId: slugOf(after.playlist_pk) }, before, after); }
   }
   const fail = (row, msg) => setRow(row.id, { status: "error", error: short(msg), message: short(msg, 160), checked_at: clock() });
 
@@ -126,6 +129,7 @@ export function createSmartService({ db, repo, py, config, clock = Date.now }) {
       const id = Number(db.prepare(
         "INSERT INTO smart_runs (playlist_pk, fingerprint, job_id, status, pct, message, provider, model, requested_by, created_at, updated_at, checked_at) VALUES (?, ?, ?, 'queued', 0, 'Queued...', ?, ?, ?, ?, ?, ?)"
       ).run(pk, fingerprint, r.json.job_id, config.pySmartProvider, short(config.pySmartModel, 80), user.id, t, t, clock()).lastInsertRowid);
+      if (onChange) onChange("smart", { playlistId: slug }, null, byId(id));
       return { started: true, status: pub(byId(id), fingerprint) };
     });
   }

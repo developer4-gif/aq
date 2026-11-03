@@ -1,4 +1,4 @@
-<#
+﻿<#
   Mirrors the four working folders under D:\AQspace into this repo (robocopy /MIR per folder),
   leaving out virtualenvs, dependencies, generated output, databases, secrets and probe files.
   The user's OAuth app (backend/, frontend/, docker-compose.yml) is never touched.
@@ -18,7 +18,7 @@ $map = [ordered]@{
     "docs"             = "docs"
 }
 
-$xd = @(".venv", "venv", "node_modules", "output", "data", "__pycache__", ".pytest_cache",
+$xd = @(".venv", "venv", "node_modules", "output", "data", ".cache", ".tmp", "__pycache__", ".pytest_cache",
         "screenshots-tmp", "_landing-backup", "build", "dist", "*.egg-info", ".git")
 $xf = @("*.db", "*.db-journal", "*.sqlite", "*.sqlite3", ".env", "*.pyc", "*.log", "_*.html", "undefined", "Thumbs.db")
 

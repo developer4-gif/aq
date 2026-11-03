@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import random
 import re
 import time
@@ -65,14 +66,35 @@ PROVIDERS: dict[str, dict] = {
         "needs_key": True,
         "key_hint": "Access token from huggingface.co/settings/tokens with 'Inference Providers' permission (hf_...)",
     },
+    "nvidia": {
+        "label": "NVIDIA Nemotron",
+        "default_model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+        "needs_key": True,
+        "key_hint": "Free key from build.nvidia.com (starts with nvapi-...)",
+    },
+    "colab": {
+        "label": "Colab Qwen3-8B",
+        "default_model": "qwen3-8b",
+        "needs_key": True,
+        "key_hint": "The key printed by the Colab server cell (set COLAB_LLM_URL and COLAB_LLM_KEY in backend/.env)",
+    },
 }
 
 _ENDPOINTS = {
     "groq": "https://api.groq.com/openai/v1/chat/completions",
     "xai": "https://api.x.ai/v1/chat/completions",
     "huggingface": "https://router.huggingface.co/v1/chat/completions",
+    "nvidia": "https://integrate.api.nvidia.com/v1/chat/completions",
 }
 _GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+
+
+def _colab_url() -> str:
+    """The Colab server's base URL (a cloudflared link) comes from COLAB_LLM_URL; it changes every session."""
+    base = (os.environ.get("COLAB_LLM_URL") or "").strip().rstrip("/")
+    if not re.fullmatch(r"https://[A-Za-z0-9.\-]+(:\d+)?", base):
+        raise LLMError("COLAB_LLM_URL is not set to the https link printed by the Colab server cell.")
+    return base + "/v1/chat/completions"
 
 Progress = Callable[[str, int, str], None]
 
@@ -119,6 +141,13 @@ _BASE_PROFILES: dict[str, dict] = {
                 digest_out=3000, out_single=16000, out_batch=12000, tpm=None),
     "huggingface": dict(single_chars=20000, chunk_chars=10000, batch_chars=14000, digest_cap=3500,
                         digest_out=2000, out_single=8000, out_batch=5000, tpm=None),
+    # NVIDIA NIM free tier: ~40 requests/minute, no daily token cap; large-context Nemotron models
+    "nvidia": dict(single_chars=40000, chunk_chars=20000, batch_chars=20000, digest_cap=4000,
+                   digest_out=2500, out_single=12000, out_batch=8000, tpm=None),
+    # self-hosted Qwen3-8B (llama.cpp on a Colab T4, 16k context, ~33 tok/s): small slices keep every
+    # call well inside the context window and each call short
+    "colab": dict(single_chars=6000, chunk_chars=8000, batch_chars=8000, digest_cap=2500,
+                  digest_out=1500, out_single=5000, out_batch=4000, tpm=None),
 }
 
 
@@ -370,7 +399,7 @@ class _Client:
                                      "temperature": temperature, "maxOutputTokens": max_tokens},
             }
             return url, headers, body
-        url = _ENDPOINTS[self.provider]
+        url = _ENDPOINTS.get(self.provider) or _colab_url()
         headers = {"Authorization": f"Bearer {self.key}", "Content-Type": "application/json"}
         body = {
             "model": self.model,

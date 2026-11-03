@@ -13,6 +13,7 @@ import { playlistRoutes } from "./routes/playlists.js";
 import { progressRoutes } from "./routes/progress.js";
 import { notesRoutes, fontRoutes } from "./routes/notes.js";
 import { smartRoutes } from "./routes/smart.js";
+import { createTracker, devRoutes } from "./dev.js";
 import { healthRoutes, meRoutes, importRoutes, syncRoutes } from "./routes/misc.js";
 
 export const VERSION = "0.1.0";
@@ -23,26 +24,35 @@ export function createApp(config, deps = {}) {
   assertPyUrl(config.pyUrl, config.allowRemotePy);
   const db = deps.db || openDb(config.dbFile, config.sqlDir);
   const repo = createRepo(db);
-  const py = createPyClient({ baseUrl: config.pyUrl, timeoutMs: config.notes.pyTimeoutMs, fetchImpl: deps.fetchImpl || fetch });
-  const notes = createNotesService({ db, repo, py, config, clock: deps.clock || Date.now });
-  const smart = createSmartService({ db, repo, py, config, clock: deps.clock || Date.now });
+  const tracker = config.devTools ? createTracker({ logDir: config.devLogDir, keepDays: config.devLogDays }) : null;
+  const fetchImpl = deps.fetchImpl || fetch;
+  const py = createPyClient({ baseUrl: config.pyUrl, timeoutMs: config.notes.pyTimeoutMs, fetchImpl: tracker ? tracker.wrapFetch(fetchImpl) : fetchImpl });
+  const onChange = tracker ? tracker.change : null;
+  const notes = createNotesService({ db, repo, py, config, clock: deps.clock || Date.now, onChange });
+  const smart = createSmartService({ db, repo, py, config, clock: deps.clock || Date.now, onChange });
   const authenticate = deps.authenticate || localAuth;
 
   const app = express();
   app.disable("x-powered-by");
   app.set("etag", false);
-  app.locals.db = db; app.locals.repo = repo;
+  app.locals.db = db; app.locals.repo = repo; app.locals.tracker = tracker;
 
   app.use(securityHeaders);
   if (config.log) {
     app.use((req, res, next) => {              // method, path (no query string, no headers, no bodies), status, time
       const t = Date.now();
+      if (req.path.startsWith("/dev/api/")) return next();   // tracker polling would flood the console
       res.on("finish", () => console.log(`${req.method} ${req.originalUrl.split("?")[0]} ${res.statusCode} ${Date.now() - t}ms`));
       next();
     });
   }
   app.use(hostGuard);
   app.use(cors);
+  if (tracker) {
+    app.use(tracker.middleware);
+    // own (unrecorded) client: the tracker's health probe must not fill the request log
+    app.use("/dev", devRoutes({ db, py: createPyClient({ baseUrl: config.pyUrl, timeoutMs: 1500, fetchImpl }), tracker, runDir: config.runDir }));
+  }
 
   const general = rateLimit(config.rate.general, deps.clock);
   const heavy = rateLimit(config.rate.heavy, deps.clock);

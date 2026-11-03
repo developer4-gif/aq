@@ -10,7 +10,7 @@ const PUBLIC_STATE = { queued: "queued", running: "running", done: "ready", erro
 const nowIso = () => new Date().toISOString();
 const short = (s, n = 300) => String(s ?? "").replace(/[\u0000-\u001f]/g, " ").slice(0, n);
 
-export function createNotesService({ db, repo, py, config, clock = Date.now }) {
+export function createNotesService({ db, repo, py, config, clock = Date.now, onChange = null }) {
   const N = config.notes;
   const locks = new Map();           // videoId -> promise chain
 
@@ -28,7 +28,9 @@ export function createNotesService({ db, repo, py, config, clock = Date.now }) {
   }
   function setRow(id, f) {
     const keys = Object.keys(f);
+    const before = onChange && byId(id);
     db.prepare(`UPDATE notes_jobs SET ${keys.map((k) => k + " = ?").join(", ")}, updated_at = ? WHERE id = ?`).run(...keys.map((k) => f[k]), nowIso(), id);
+    if (onChange) { const after = byId(id); onChange("notes", { videoId: after.video_id }, before, after); }
   }
 
   /** Ask Python how a queued/running job is doing (throttled). Network trouble keeps the record as it is. */
@@ -118,6 +120,7 @@ export function createNotesService({ db, repo, py, config, clock = Date.now }) {
       const id = Number(db.prepare(
         "INSERT INTO notes_jobs (video_id, job_id, status, pct, message, requested_by, created_at, updated_at, checked_at) VALUES (?, ?, 'queued', 0, 'Queued...', ?, ?, ?, ?)"
       ).run(videoId, r.json.job_id, user.id, t, t, clock()).lastInsertRowid);
+      if (onChange) onChange("notes", { videoId }, null, byId(id));
       return { started: true, status: pub(videoId, byId(id)) };
     });
   }

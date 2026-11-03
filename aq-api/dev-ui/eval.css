@@ -1,0 +1,51 @@
+/* Notes provider evaluation page. Builds on dev.css tokens. */
+body.evalpage { height: auto; min-height: 100%; }
+.ev-main { max-width: 1180px; margin: 0 auto; padding: 24px var(--gutter) 64px; }
+.ev-head h1 { font-size: clamp(26px, 4vw, 36px); margin-bottom: 8px; }
+.ev-head p { margin: 4px 0; max-width: 80ch; }
+.ev-warn { margin-top: 12px; padding: 10px 14px; border: 1px solid var(--warn); border-radius: var(--r-sm);
+  color: var(--warn); background: rgba(243, 211, 138, .06); }
+.ev-sec { margin-top: 40px; }
+.ev-sec h2 { font-size: 22px; margin-bottom: 12px; }
+.ev-sec h3 { font-size: 16px; margin: 18px 0 8px; font-family: var(--font-body); font-weight: 600; }
+
+.ev-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 24px; }
+.ev-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-md); padding: 16px; }
+.ev-card .k { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.ev-card .v { font-family: var(--font-display); font-size: 24px; margin: 6px 0 2px; }
+.ev-card .s { color: var(--muted); font-size: 12px; }
+
+.ev-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-sm); }
+.ev-table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.ev-table th, .ev-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; white-space: nowrap; }
+.ev-table th { color: var(--muted); font-weight: 500; background: var(--panel); position: sticky; top: 0; }
+.ev-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.ev-table td.wrap { white-space: normal; min-width: 220px; max-width: 420px; }
+.ev-table tr.na td { color: #5c5c5c; }
+.ev-small td, .ev-small th { padding: 5px 8px; font-size: 12px; }
+.nm { color: #6d6d6d; font-style: italic; }
+.ok { color: var(--ok); }
+.bad { color: var(--danger); }
+.warn { color: var(--warn); }
+
+.ev-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 12px; }
+.ev-chart { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px; }
+.ev-chart h3 { margin: 0 0 2px; }
+.ev-chart p { margin: 0 0 8px; color: var(--muted); font-size: 12px; }
+.ev-chart svg { width: 100%; height: auto; display: block; }
+.ev-chart svg text { fill: var(--text); font: 12px var(--font-body); }
+.ev-chart svg text.lbl { fill: var(--muted); }
+.ev-chart svg .track { fill: var(--panel-2); }
+.ev-chart svg .bar { fill: var(--accent); }
+.ev-chart svg .bar.best { fill: var(--ok); }
+.ev-chart svg .tick { stroke: var(--warn); stroke-width: 2; }
+.ev-chart svg .gate { stroke: var(--danger); stroke-width: 1; stroke-dasharray: 3 3; }
+
+.ev-gloss { display: grid; grid-template-columns: minmax(160px, 220px) 1fr; gap: 6px 18px; margin: 0; }
+.ev-gloss dt { font-weight: 600; }
+.ev-gloss dd { margin: 0; color: var(--muted); }
+.ev-list { padding-left: 18px; color: var(--muted); max-width: 90ch; }
+.ev-list li { margin: 6px 0; }
+details.ev-det { margin-top: 8px; }
+details.ev-det summary { cursor: pointer; color: var(--muted); }
+@media (max-width: 640px) { .ev-gloss { grid-template-columns: 1fr; } .ev-charts { grid-template-columns: 1fr; } }

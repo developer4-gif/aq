@@ -81,6 +81,10 @@ Requirements: Python 3.10+, Node.js 18+.
 | `scripts/` | `sync.ps1` (mirror working folders into this repo), `secret-scan.ps1` (key scanner) |
 | `start-all.ps1`, `stop-all.ps1` | Start / stop both services |
 
+### Where files go (disk space)
+
+Everything that grows stays inside the project folder, on the project's drive: `.cache/` (pip, npm, model downloads), `.tmp/` (scratch files) and `lecture-notes-ai\backend\.cache` (saved transcripts and LLM answers, capped at 300 MB). All are git-ignored. `start-all.ps1` sets this up; in your own terminal run `. .\scripts\dev-env.ps1` before `npm install`, `pip install` or tests.
+
 ### Development
 
 - Python tests: `cd lecture-notes-ai; $env:LNA_OFFLINE='1'; .venv\Scripts\python -m pytest tests -q`

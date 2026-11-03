@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AQ Tracker</title>
+  <link rel="stylesheet" href="dev.css">
+  <script src="tracker.js" defer></script>
+</head>
+<body class="tracker">
+  <header class="tr-head">
+    <h1>AQ Tracker</h1>
+    <nav><a href="./">Dev home</a> · <a href="flow.html">Flow</a></nav>
+    <button id="pause" type="button">Pause</button>
+    <span id="status" class="tr-status">connecting...</span>
+  </header>
+
+  <section class="tr-services" aria-label="Services">
+    <div class="tr-card"><h2>API</h2><p id="svc-api">-</p></div>
+    <div class="tr-card"><h2>Worker</h2><p id="svc-worker">-</p></div>
+    <div class="tr-card"><h2>Counts</h2><p id="counts">-</p></div>
+  </section>
+
+  <nav class="tr-tabs" role="tablist">
+    <button type="button" data-tab="requests" class="active">Requests</button>
+    <button type="button" data-tab="events">Pipeline events</button>
+    <button type="button" data-tab="jobs">Jobs</button>
+    <button type="button" data-tab="errors">Recent errors</button>
+    <button type="button" data-tab="history">History</button>
+    <button type="button" data-tab="stats">Stats</button>
+    <button type="button" data-tab="logs">Service logs</button>
+  </nav>
+
+  <section id="tab-requests" class="tr-tab">
+    <div class="tr-filters">
+      <select id="f-layer"><option value="">all layers</option><option>ui</option><option>api</option><option>worker</option><option>dev</option></select>
+      <select id="f-status"><option value="">all statuses</option><option value="2">2xx</option><option value="3">3xx</option><option value="4">4xx</option><option value="5">5xx</option><option value="0">failed (0)</option></select>
+      <input id="f-text" type="search" placeholder="filter path / method">
+      <label><input id="f-dev" type="checkbox"> include /dev</label>
+    </div>
+    <table class="tr-table"><thead><tr><th>#</th><th>time</th><th>layer</th><th>method</th><th>path</th><th>status</th><th>ms</th></tr></thead><tbody id="req-body"></tbody></table>
+  </section>
+  <section id="tab-events" class="tr-tab" hidden>
+    <table class="tr-table"><thead><tr><th>#</th><th>time</th><th>kind</th><th>job</th><th>video / playlist</th><th>from → to</th><th>stage</th><th>pct</th></tr></thead><tbody id="ev-body"></tbody></table>
+  </section>
+  <section id="tab-jobs" class="tr-tab" hidden>
+    <table class="tr-table"><thead><tr><th>kind</th><th>job</th><th>video / playlist</th><th>state</th><th>stage</th><th>pct</th><th>provider / model</th><th>started</th><th>duration</th><th>error</th></tr></thead><tbody id="jobs-body"></tbody></table>
+  </section>
+  <section id="tab-errors" class="tr-tab" hidden>
+    <table class="tr-table"><thead><tr><th>time</th><th>path</th><th>status</th></tr></thead><tbody id="err-body"></tbody></table>
+  </section>
+
+  <section id="tab-history" class="tr-tab" hidden>
+    <div class="tr-filters">
+      <select id="h-type"><option value="requests">requests</option><option value="events">pipeline events</option></select>
+      <select id="h-date" aria-label="day"></select>
+      <select id="h-layer" aria-label="layer / kind"></select>
+      <select id="h-status" aria-label="status"></select>
+      <input id="h-q" type="search" placeholder="search the whole day">
+      <button id="h-go" type="button" class="tr-btn">Search</button>
+      <span class="tr-spacer"></span>
+      <button id="h-csv" type="button" class="tr-btn">Export CSV</button>
+      <button id="h-jsonl" type="button" class="tr-btn">Export JSONL</button>
+    </div>
+    <p id="h-info" class="tr-note">-</p>
+    <table class="tr-table"><thead id="h-head"></thead><tbody id="h-body"></tbody></table>
+    <div class="tr-pager"><button id="h-prev" type="button" class="tr-btn">← Newer</button><span id="h-page"></span><button id="h-next" type="button" class="tr-btn">Older →</button></div>
+  </section>
+
+  <section id="tab-stats" class="tr-tab" hidden>
+    <div class="tr-filters">
+      <select id="s-date" aria-label="day"></select>
+      <select id="s-layer"><option value="">all layers</option><option>ui</option><option>api</option><option>worker</option></select>
+      <button id="s-go" type="button" class="tr-btn">Refresh</button>
+    </div>
+    <div class="tr-services" id="s-kpis"></div>
+    <div class="tr-card tr-chart-card"><h2>Requests per hour (UTC) · errors in red</h2><svg id="s-chart" class="tr-chart" viewBox="0 0 720 200" role="img" aria-label="requests per hour"></svg></div>
+    <table class="tr-table"><thead><tr><th>layer</th><th>method</th><th>path</th><th>count</th><th>errors</th><th>error rate</th><th>p50 ms</th><th>p95 ms</th><th>max ms</th></tr></thead><tbody id="s-body"></tbody></table>
+  </section>
+
+  <section id="tab-logs" class="tr-tab" hidden>
+    <div class="tr-filters">
+      <select id="l-svc"><option value="api">api (Node)</option><option value="worker">worker (Python)</option></select>
+      <select id="l-stream"><option value="out">stdout</option><option value="err">stderr</option></select>
+      <select id="l-run"><option value="current">current run</option><option value="prev">previous run</option></select>
+      <select id="l-tail"><option>100</option><option selected>200</option><option>500</option><option>2000</option></select>
+      <input id="l-q" type="search" placeholder="filter lines">
+      <label><input id="l-auto" type="checkbox" checked> auto-refresh</label>
+      <button id="l-pause" type="button" class="tr-btn">Pause</button>
+    </div>
+    <p id="l-info" class="tr-note">-</p>
+    <pre id="l-out" class="tr-log"></pre>
+  </section>
+</body>
+</html>

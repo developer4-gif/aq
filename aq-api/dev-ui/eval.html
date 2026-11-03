@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notes Provider Eval</title>
+<link rel="stylesheet" href="dev.css">
+<link rel="stylesheet" href="eval.css">
+<script src="eval.js" defer></script>
+</head>
+<body class="evalpage">
+<header class="dev-bar">
+  <a class="brand" href="index.html">AQ Learning <small>developer</small></a>
+  <nav><a href="index.html">Hub</a><a href="flow.html">Flow</a><a href="tracker.html">Tracker</a><a href="eval.html" aria-current="page">Eval</a></nav>
+</header>
+<main class="ev-main">
+  <section class="ev-head">
+    <h1>Notes provider evaluation</h1>
+    <p class="muted">Which LLM provider should write AQ Learning's lecture notes? Real runs on 4 videos from the library, 2 runs each. Every number below was measured; anything not measured says so.</p>
+    <p class="muted mono" id="meta"></p>
+    <div class="ev-warn" id="biasWarn" hidden><strong>Judge bias warning:</strong> <span id="biasText"></span></div>
+    <div class="ev-warn" id="loadErr" hidden></div>
+  </section>
+
+  <section class="ev-cards" id="cards" aria-label="Summary"></section>
+
+  <section class="ev-sec">
+    <h2>Decision</h2>
+    <p class="muted" id="formula"></p>
+    <div class="ev-scroll"><table class="ev-table" id="decision"></table></div>
+  </section>
+
+  <section class="ev-sec">
+    <h2>Metrics</h2>
+    <div class="ev-charts" id="charts"></div>
+  </section>
+
+  <section class="ev-sec">
+    <h2>Per video</h2>
+    <div id="perVideo"></div>
+  </section>
+
+  <section class="ev-sec">
+    <h2>Run log</h2>
+    <div class="ev-scroll"><table class="ev-table ev-small" id="runlog"></table></div>
+  </section>
+
+  <section class="ev-sec">
+    <h2>Glossary</h2>
+    <dl class="ev-gloss" id="glossary"></dl>
+  </section>
+
+  <section class="ev-sec">
+    <h2>Methodology and caveats</h2>
+    <ul class="ev-list" id="method"></ul>
+  </section>
+</main>
+</body>
+</html>

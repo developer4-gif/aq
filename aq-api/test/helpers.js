@@ -75,7 +75,7 @@ export async function startApp({ py, overrides = {}, authenticate, clock, fetchI
     fs.writeFileSync(path.join(uiDir, "_landing-backup", "index.html"), "old");
   }
   const config = loadConfig({}, {
-    dbFile: ":memory:", log: false, uiDir, pyUrl: py ? py.url : "http://127.0.0.1:9",
+    dbFile: ":memory:", log: false, uiDir, devLogDir: "", runDir: "", pyUrl: py ? py.url : "http://127.0.0.1:9",
     notes: { pollMinMs: 0, verifyMs: 0, pyTimeoutMs: 2000, importTimeoutMs: 2000 },
     rate: { general: { max: 100000, windowMs: 60000 }, heavy: { max: 100000, windowMs: 60000 } },
     ...overrides

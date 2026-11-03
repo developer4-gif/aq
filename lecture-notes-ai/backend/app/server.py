@@ -59,6 +59,8 @@ ENV_KEYS = {
     "groq": "GROQ_API_KEY",
     "xai": "XAI_API_KEY",
     "huggingface": "HF_TOKEN",
+    "nvidia": "NVIDIA_API_KEY",
+    "colab": "COLAB_LLM_KEY",
 }
 
 # Used only if llm.PROVIDERS cannot be imported (so the UI still renders).
@@ -71,8 +73,12 @@ FALLBACK_PROVIDERS = {
             "key_hint": "Key from console.x.ai"},
     "huggingface": {"label": "Hugging Face", "default_model": "meta-llama/Llama-3.3-70B-Instruct",
                     "key_hint": "Token from huggingface.co/settings/tokens"},
+    "nvidia": {"label": "NVIDIA Nemotron", "default_model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+               "key_hint": "Free key at build.nvidia.com"},
+    "colab": {"label": "Colab Qwen3-8B", "default_model": "qwen3-8b",
+              "key_hint": "Key printed by the Colab server cell"},
 }
-PROVIDER_ORDER = ["gemini", "groq", "xai", "huggingface"]
+PROVIDER_ORDER = ["gemini", "groq", "xai", "huggingface", "nvidia", "colab"]
 
 GENERIC_ERROR = ("Something went wrong while making your notes. Please try again - "
                  "if it keeps happening, check the server console for details.")

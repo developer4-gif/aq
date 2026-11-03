@@ -15,9 +15,19 @@ $apiPort = 5180
 $url    = "http://127.0.0.1:$apiPort/"
 New-Item -ItemType Directory -Force $runDir | Out-Null
 
+# --- keep every cache and scratch file inside this folder (same drive as the project, not the system drive) ---
+. (Join-Path $root "scripts\dev-env.ps1")
+
 function Test-PortBusy([int]$port) {
     $c = New-Object System.Net.Sockets.TcpClient
     try { $c.Connect("127.0.0.1", $port); return $true } catch { return $false } finally { $c.Close() }
+}
+# keep the previous run's console log as <name>.prev.log (Start-Process -Redirect* would overwrite it); read by /dev tracker "Service logs"
+function Save-PrevLog([string[]]$names) {
+    foreach ($n in $names) {
+        $f = Join-Path $runDir "$n.log"
+        if ((Test-Path $f) -and (Get-Item $f).Length -gt 0) { Move-Item -Force $f (Join-Path $runDir "$n.prev.log") -ErrorAction SilentlyContinue }
+    }
 }
 function Wait-Http([string]$u, [int]$seconds) {
     for ($i = 0; $i -lt ($seconds * 2); $i++) {
@@ -81,6 +91,7 @@ try {
     if (Test-PortBusy $aiPort) {
         Write-Host "Port $aiPort is already in use - assuming the notes service is already running (not managing it)." -ForegroundColor Yellow
     } else {
+        Save-PrevLog @("ai.out", "ai.err")
         $p = Start-Process -FilePath $py -ArgumentList "run.py" -WorkingDirectory (Join-Path $aiDir "backend") `
              -NoNewWindow -PassThru -RedirectStandardOutput (Join-Path $runDir "ai.out.log") -RedirectStandardError (Join-Path $runDir "ai.err.log")
         $pids.ai = $p.Id
@@ -90,6 +101,7 @@ try {
     if (Test-PortBusy $apiPort) {
         Write-Host "Port $apiPort is already in use - assuming the app API is already running (not managing it)." -ForegroundColor Yellow
     } else {
+        Save-PrevLog @("api.out", "api.err")
         $p = Start-Process -FilePath "npm.cmd" -ArgumentList "start" -WorkingDirectory $apiDir `
              -NoNewWindow -PassThru -RedirectStandardOutput (Join-Path $runDir "api.out.log") -RedirectStandardError (Join-Path $runDir "api.err.log")
         $pids.api = $p.Id

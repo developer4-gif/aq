@@ -1,0 +1,158 @@
+/* AQ Learning - bottom nav bar with liquid-glass lens (navbar.js).
+   Add class `has-navbar` to <body> so page content is not hidden behind the bar. */
+:root {
+  --nb-h: 64px;                 /* pill height */
+  --nb-lens: 92px;              /* lens diameter (taller than the pill) */
+  --nb-w: min(360px, calc(100vw - 32px));
+  --nb-gap: 14px;               /* distance from viewport bottom */
+  --nb-space: calc(var(--nb-lens) + var(--nb-gap) + env(safe-area-inset-bottom, 0px) + 12px);
+  --nb-dim: #5d5f63;
+  --nb-on: #ffffff;
+  --nb-tint: 120, 170, 255;     /* blue refraction tint (rgb) */
+}
+
+body.has-navbar { padding-bottom: var(--nb-space); }
+
+.nb-bar {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--nb-gap) + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 900;
+  padding: calc((var(--nb-lens) - var(--nb-h)) / 2) 0;
+  -webkit-tap-highlight-color: transparent;
+  font-family: var(--font-body, system-ui, sans-serif);
+}
+
+.nb-pill {
+  position: relative;
+  width: var(--nb-w);
+  height: var(--nb-h);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #151515, #050505);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255, 255, 255, .06);
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.nb-row {
+  display: flex;
+  height: 100%;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.nb-tab {
+  flex: 1 1 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0; padding: 0;
+  border: 0;
+  background: none;
+  color: var(--nb-dim);
+  font: inherit;
+  cursor: pointer;
+  transition: color .25s ease;
+}
+.nb-tab:hover { color: #8a8c90; }
+.nb-tab:focus { outline: none; }
+.nb-tab:focus-visible::after {
+  content: "";
+  position: absolute;
+  inset: 8px 12%;
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px rgba(var(--nb-tint), .7);
+}
+
+.nb-icon { width: 24px; height: 24px; display: block; transition: transform .3s cubic-bezier(.2, .7, .2, 1); }
+
+.nb-label {
+  position: absolute;
+  top: calc(50% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  letter-spacing: .01em;
+  white-space: nowrap;
+  color: var(--nb-on);
+  opacity: 0;
+  transition: opacity .18s ease;
+  pointer-events: none;
+}
+
+/* real row: active icon lifts a little; labels shown only in the lens copy */
+.nb-label { display: none; }     /* icons only */
+
+/* ---------- lens ---------- */
+.nb-lens {
+  position: absolute;
+  left: 0; top: 0;
+  width: var(--nb-lens);
+  height: var(--nb-lens);
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, .3);
+}
+
+.nb-lens-view {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  /* bends/brightens the page background seen through the caps */
+  /* no backdrop-filter: re-blurring the page (thumbnails) every frame was the main cost */
+  background: rgba(var(--nb-tint), .09);
+  contain: paint;
+}
+
+.nb-lens-clone {
+  position: absolute;
+  left: 0; top: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #1d1d1f, #08080a);
+  will-change: transform;
+}
+.nb-lens-clone .nb-tab { cursor: default; }
+.nb-lens-clone .nb-tab.nb-active { color: var(--nb-on); }
+.nb-lens-clone .nb-tab.nb-active .nb-icon { filter: drop-shadow(0 0 6px rgba(255, 255, 255, .25)); }
+.nb-settled .nb-lens-clone .nb-tab.nb-active .nb-label { opacity: 1; transition-delay: .05s; }
+
+/* blue refraction caps at top/bottom, where the lens leaves the pill */
+.nb-lens-caps {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(60% 22% at 50% 4%, rgba(255, 255, 255, .55), rgba(255, 255, 255, 0) 70%),
+    radial-gradient(70% 26% at 50% 2%, rgba(var(--nb-tint), .55), rgba(var(--nb-tint), 0) 75%),
+    radial-gradient(60% 22% at 50% 96%, rgba(255, 255, 255, .4), rgba(255, 255, 255, 0) 70%),
+    radial-gradient(70% 26% at 50% 98%, rgba(var(--nb-tint), .6), rgba(var(--nb-tint), 0) 75%),
+    radial-gradient(circle at 32% 30%, rgba(255, 255, 255, .10), rgba(255, 255, 255, 0) 45%);
+  mix-blend-mode: screen;
+}
+
+/* thin bright rim + inner glassy edge */
+.nb-lens-rim {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .42),
+    inset 0 1.5px 0 rgba(255, 255, 255, .5),
+    inset 0 -2px 3px rgba(var(--nb-tint), .75),
+    inset 0 2px 3px rgba(var(--nb-tint), .55),
+    inset 0 0 14px rgba(0, 0, 0, .35),
+    0 0 0 .5px rgba(var(--nb-tint), .5);
+}
+
+/* setActive(null): no selection -> lens fades out, every icon dim */
+.nb-lens { transition: opacity .22s ease; }
+.nb-none .nb-lens { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-tab, .nb-icon, .nb-label, .nb-lens { transition: none; }
+}

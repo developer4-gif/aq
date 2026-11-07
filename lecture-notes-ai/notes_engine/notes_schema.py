@@ -32,6 +32,7 @@ MAX_LABEL = 40
 MAX_GLOSSARY = 30
 MAX_RECAP_POINTS = 8
 MAX_TAKEAWAYS = 4
+MAX_COVER_TAKEAWAYS = 6
 
 BLOCK_TYPES = ("paragraph", "bullets", "steps", "definition", "example",
                "callout", "code", "table", "formula")
@@ -656,4 +657,9 @@ def validate_notes(raw: dict, transcript: dict | None = None, *, model: str | No
         "big_idea": big_idea,
         "toc": [f"{sec['number']}. {sec['title']}" for sec in sections],
     }
+    # optional lecture-level "key takeaways" for the top of the notes (key omitted when the model gave none,
+    # so older notes JSON round-trips unchanged)
+    top = _str_list(rcover.get("takeaways") or rcover.get("key_takeaways"), MAX_COVER_TAKEAWAYS, 220)
+    if top:
+        cover["takeaways"] = top
     return {"meta": meta, "cover": cover, "sections": sections, "glossary": glossary, "recap": recap}

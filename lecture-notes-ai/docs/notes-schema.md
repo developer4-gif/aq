@@ -8,6 +8,7 @@ The structure `llm.py` produces, `notes_schema.validate_notes` enforces, and `pd
               "language": "en", "generated_on": "2026-10-23", "model": "provider/model" },
   "cover":  { "tagline": "a student's own field notebook —", "summary": str (2-3 sentences),
               "big_idea": str (one-line sticky-note text, e.g. "same backend serves every screen!"),
+              "takeaways": [ str, ... ]  (OPTIONAL, 0-6 lecture-level key takeaways; key absent when none),
               "toc": [ "2. architecture, the 30,000ft map", ... ] },
   "sections": [ {
       "number": 2, "title": "architecture, the 30,000ft map", "subtitle": "one process, one DB", "timestamp": "04:12",

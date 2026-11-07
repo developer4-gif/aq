@@ -179,7 +179,9 @@ def _profile(provider: str, model: str) -> dict:
         # llama-3.1-8b-instant: only ~6k tokens/minute on the free tier
         p.update(single_chars=3000, chunk_chars=5000, batch_chars=6000, digest_cap=2000,
                  digest_out=1000, out_single=3000, out_batch=2000, tpm=6000)
-    p.setdefault("reasoning_effort", None)   # sent to the provider when set (Groq reasoning models)
+    # concurrent requests one job may run (Gemini: slice the lecture and write the slices in parallel)
+    p.setdefault("parallel", 4 if provider == "gemini" else 1)
+    p.setdefault("reasoning_effort", None)  # sent to the provider when set (Groq reasoning models)
     p.setdefault("reasoning_reserve", 0)     # output tokens a reasoning model may burn before the answer
     p.setdefault("final_out", 3000)
     # sections one compose call can reliably return: answer budget = out_batch - reasoning reserve
@@ -386,17 +388,21 @@ class _Client:
         self.pacer = _Pacer(self.profile["tpm"])
         self.json_mode = True  # flips to False if an OpenAI-compatible provider rejects it
         self.reasoning_effort = self.profile["reasoning_effort"]  # flips to None if rejected
+        self.schema_ok = provider == "gemini"  # Gemini structured output; flips to False if rejected
 
     # -- request construction (kept separate so tests can assert on it) --
-    def build_request(self, system: str, user: str, max_tokens: int, temperature: float) -> tuple[str, dict, dict]:
+    def build_request(self, system: str, user: str, max_tokens: int, temperature: float,
+                      schema: dict | None = None) -> tuple[str, dict, dict]:
         if self.provider == "gemini":
             url = _GEMINI_URL.format(model=self.model)
             headers = {"x-goog-api-key": self.key, "Content-Type": "application/json"}
+            gen = {"responseMimeType": "application/json", "temperature": temperature, "maxOutputTokens": max_tokens}
+            if schema and self.schema_ok:
+                gen["responseJsonSchema"] = schema  # structured output: always valid JSON, no repair call
             body = {
                 "systemInstruction": {"parts": [{"text": system}]},
                 "contents": [{"role": "user", "parts": [{"text": user}]}],
-                "generationConfig": {"responseMimeType": "application/json",
-                                     "temperature": temperature, "maxOutputTokens": max_tokens},
+                "generationConfig": gen,
             }
             return url, headers, body
         url = _ENDPOINTS.get(self.provider) or _colab_url()
@@ -414,11 +420,12 @@ class _Client:
         return url, headers, body
 
     # -- HTTP with retries --
-    def _post(self, url: str, headers: dict, body: dict) -> dict:
+    def _post(self, url: str, headers: dict, body: dict, read_timeout: float | None = None) -> dict:
         last_status = None
         for attempt in range(MAX_ATTEMPTS):
             try:
-                resp = requests.post(url, headers=headers, json=body, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT))
+                resp = requests.post(url, headers=headers, json=body,
+                                     timeout=(CONNECT_TIMEOUT, read_timeout or READ_TIMEOUT))
             except (requests.Timeout, requests.ConnectionError) as e:
                 last_status = type(e).__name__
                 if attempt + 1 >= MAX_ATTEMPTS:
@@ -501,15 +508,20 @@ class _Client:
         return _HTTPStatusError(msg, sc, (detail + " " + code).lower(), payload)
 
     # -- one completion: returns (text, truncated) --
-    def complete(self, system: str, user: str, max_tokens: int, temperature: float = 0.3) -> tuple[str, bool]:
+    def complete(self, system: str, user: str, max_tokens: int, temperature: float = 0.3,
+                 schema: dict | None = None, read_timeout: float | None = None) -> tuple[str, bool]:
         est = int((len(system) + len(user)) / CHARS_PER_TOKEN) + max_tokens
-        for _ in range(4):  # at most: normal, then without JSON mode / reasoning_effort
-            url, headers, body = self.build_request(system, user, max_tokens, temperature)
+        for _ in range(4):  # at most: normal, then without JSON mode / reasoning_effort / schema
+            url, headers, body = self.build_request(system, user, max_tokens, temperature, schema)
             self.pacer.before(est)
             try:
-                data = self._post(url, headers, body)
+                data = self._post(url, headers, body, read_timeout)
             except _HTTPStatusError as e:
                 self.pacer.after(est)
+                if self.provider == "gemini" and e.status == 400 and "responseJsonSchema" in body["generationConfig"] \
+                        and any(t in e.detail for t in ("schema", "unknown name", "generation_config", "generationconfig")):
+                    self.schema_ok = False  # model/API version without JSON-schema output: plain JSON mode
+                    continue
                 if self.provider != "gemini" and e.status in (400, 422):
                     failed = _failed_generation(e.payload)
                     if failed and "json_validate_failed" in e.detail:
@@ -557,9 +569,13 @@ class _Client:
         return content or "", fr == "length"
 
     # -- JSON helpers --
-    def ask_json(self, messages: tuple[str, str], max_tokens: int, temperature: float = 0.3) -> Any:
+    def ask_json(self, messages: tuple[str, str], max_tokens: int, temperature: float = 0.3,
+                 schema: dict | None = None, read_timeout: float | None = None) -> Any:
         system, user = messages
-        text, truncated = self.complete(system, user, max_tokens, temperature)
+        extra: dict = {"schema": schema} if schema and self.schema_ok else {}  # only Gemini uses a schema
+        if read_timeout:
+            extra["read_timeout"] = read_timeout
+        text, truncated = self.complete(system, user, max_tokens, temperature, **extra)
         try:
             return parse_json(text)
         except ValueError as e:
@@ -648,42 +664,170 @@ def _single_pass(client: _Client, transcript: dict, text: str, meta: dict, repor
     prof = client.profile
     n = prompts.target_section_count(transcript.get("duration_sec"), len(text))
     report(10, "Writing the notebook (single pass)...")
-    obj = client.ask_json(prompts.compose_single_messages(meta, text, n), prof["out_single"])
+    obj = client.ask_json(prompts.compose_single_messages(meta, text, n), prof["out_single"],
+                          schema=prompts.NOTES_SCHEMA)
     report(90, "Checking the notes...")
     if isinstance(obj, list):
         obj = {"sections": obj}
     return obj
 
 
+PART_TIMEOUT = 45      # s; a parallel part call normally takes 5-15 s, a stuck one is retried instead
+SECTIONS_PER_PART = 5  # parallel single pass: sections one slice call writes (~4k output tokens, ~10 s)
+
+
+def _part_count(client: _Client, n_target: int) -> int:
+    """How many parallel slice calls a single-pass-sized lecture gets (1 = classic single pass)."""
+    par = client.profile["parallel"]
+    if par <= 1 or n_target < 7:
+        return 1
+    return max(1, min(par, math.ceil(n_target / SECTIONS_PER_PART)))
+
+
+_STOP = {"the", "a", "an", "and", "of", "in", "on", "to", "for", "vs", "with", "from", "how", "what", "is",
+         "llm", "llms", "model", "models", "stage", "into", "via", "its", "under", "over", "between", "by",
+         "as", "at", "or", "part", "intro", "introduction", "basics", "overview"}
+
+
+def _title_words(s: Any) -> set[str]:
+    t = _to_s(s.get("title") if isinstance(s, dict) else "").lower()
+    return {w for w in re.findall(r"[a-z0-9][a-z0-9\-]+", t) if w not in _STOP}
+
+
+def _join_parts(left: list, right: list) -> list:
+    """Concatenate two consecutive slices' sections. A topic cut by the slice boundary tends to come
+    back twice (end of one slice, start of the next); when the two boundary titles clearly name the
+    same topic (2+ shared content words that make up at least half of the shorter title), merge them into one section instead of printing the topic twice."""
+    if not left or not right or not isinstance(left[-1], dict) or not isinstance(right[0], dict):
+        return left + right
+    a, b = left[-1], right[0]
+    wa, wb = _title_words(a), _title_words(b)
+    common = len(wa & wb)
+    if common < 2 or common / max(1, min(len(wa), len(wb))) < 0.5:
+        return left + right
+    blocks_a = a.get("blocks") if isinstance(a.get("blocks"), list) else []
+    blocks_b = b.get("blocks") if isinstance(b.get("blocks"), list) else []
+    take = [t for t in (a.get("key_takeaways") or []) + (b.get("key_takeaways") or []) if isinstance(t, str)]
+    merged = dict(a)
+    merged["blocks"] = (blocks_a + [x for x in blocks_b if x not in blocks_a])[:8]
+    merged["diagram"] = a.get("diagram") or b.get("diagram")
+    merged["key_takeaways"] = list(dict.fromkeys(take))[:3]
+    return left[:-1] + [merged] + right[1:]
+
+
+def _parallel_single(client: _Client, transcript: dict, text_chars: int, meta: dict, parts: int,
+                     report: _Reporter) -> dict:
+    """Single pass split by time: ``parts`` slice calls (raw transcript -> sections) plus one front-matter
+    call over the whole transcript, all at once. Wall time ~ the slowest call instead of the sum."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    prof = client.profile
+    n_target = prompts.target_section_count(transcript.get("duration_sec"), text_chars)
+    slices = _get_chunker()(transcript, max_chars=math.ceil(text_chars / parts) + 200, overlap_chars=0)
+    if not slices:
+        raise LLMError("The transcript is empty.")
+    total = sum(len(s["text"]) for s in slices) or 1
+    full_text = "\n".join(s["text"] for s in slices)
+    jobs = []
+    for i, sl in enumerate(slices):
+        n = max(1, min(prof["max_sections_per_call"], round(n_target * len(sl["text"]) / total)))
+        jobs.append((i, sl["text"], n))
+    done = {"n": 0}
+    report(10, f"Writing {len(jobs)} notebook parts in parallel...")
+
+    def tick() -> None:
+        done["n"] += 1
+        report(10 + int(80 * done["n"] / (len(jobs) + 1)), f"Notebook parts written: {done['n']}/{len(jobs) + 1}")
+
+    def cap_out(n: int) -> int:  # ~1k tokens per section is plenty; a tight cap stops runaway output early
+        return min(prof["out_batch"], 2000 + 1000 * n)
+
+    def part(job: tuple[int, str, int]) -> list:
+        i, txt, n = job
+        got: list = []
+        for strict in ("", f"IMPORTANT: return AT LEAST {n} separate sections covering the whole slice."):
+            msgs = prompts.compose_part_messages(meta, txt, n, n, i + 1, len(jobs), strict)
+            try:
+                again = _as_section_list(client.ask_json(msgs, cap_out(n), schema=prompts.SECTIONS_SCHEMA,
+                                                         read_timeout=PART_TIMEOUT))
+            except _OutputTruncated as e:
+                # usually a repetition loop: keep the complete sections, drop the runaway last one
+                try:
+                    again = _as_section_list(salvage_truncated_json(e.text))[:-1]
+                except ValueError:
+                    again = []
+            except _BadJSON:
+                again = []
+            if _usable_count(again) > _usable_count(got):
+                got = again
+            if _usable_count(got) >= _coverage_needed(n):
+                break
+        tick()
+        return got
+
+    def front() -> dict:
+        try:
+            obj = client.ask_json(prompts.compose_front_messages(meta, full_text), prof["final_out"] + 1500,
+                                  schema=prompts.FRONT_SCHEMA, read_timeout=PART_TIMEOUT)
+        except (_BadJSON, _OutputTruncated):
+            obj = {}
+        tick()
+        return obj if isinstance(obj, dict) else {}
+
+    with ThreadPoolExecutor(max_workers=min(len(jobs) + 1, prof["parallel"] + 1)) as pool:
+        f_front = pool.submit(front)
+        f_parts = [pool.submit(part, j) for j in jobs]
+        per_part = [f.result() for f in f_parts]  # in lecture order; re-raises LLMError
+        out = dict(f_front.result())
+    sections = per_part[0] if per_part else []
+    for nxt in per_part[1:]:
+        sections = _join_parts(sections, nxt)
+    report(90, "Checking the notes...")
+    out["sections"] = sections
+    if not out.get("glossary"):
+        out["glossary"] = _glossary_from_blocks(sections)
+    return out
+
+
 def _digest_chunks(client: _Client, chunks: list[dict], meta: dict, report: _Reporter) -> list[str]:
     prof = client.profile
-    digests: list[str] = []
-    for i, ch in enumerate(chunks):
+
+    def one(i: int, ch: dict) -> str:
         report(5 + int(40 * i / max(1, len(chunks))), f"Extracting key knowledge ({i + 1}/{len(chunks)})...")
-        text = ch["text"]
-        msgs = prompts.digest_messages(text, i, len(chunks), meta, prompts.digest_word_budget(len(text)))
-        # the prompt text is part of the key, so editing a prompt or switching model never reuses old digests
-        ck = cache.make_key("digest", 1, client.provider, client.model, msgs, prof["digest_out"], prof["digest_cap"])
-        hit = cache.get("digest", ck)
-        if isinstance(hit, dict) and str(hit.get("d", "")).strip():
-            digests.append(str(hit["d"]))
-            continue
-        from_model = True
+        return _digest_one(client, ch["text"], i, len(chunks), meta)
+
+    if prof["parallel"] > 1 and len(chunks) > 1:
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=prof["parallel"]) as pool:
+            got = list(pool.map(lambda a: one(*a), enumerate(chunks)))  # keeps lecture order
+    else:
+        got = [one(i, ch) for i, ch in enumerate(chunks)]
+    return [d for d in got if d.strip()]
+
+
+def _digest_one(client: _Client, text: str, i: int, total: int, meta: dict) -> str:
+    """One slice -> compact digest text ("" when the slice has nothing teachable)."""
+    prof = client.profile
+    msgs = prompts.digest_messages(text, i, total, meta, prompts.digest_word_budget(len(text)))
+    # the prompt text is part of the key, so editing a prompt or switching model never reuses old digests
+    ck = cache.make_key("digest", 1, client.provider, client.model, msgs, prof["digest_out"], prof["digest_cap"])
+    hit = cache.get("digest", ck)
+    if isinstance(hit, dict) and str(hit.get("d", "")).strip():
+        return str(hit["d"])
+    from_model = True
+    try:
         try:
-            try:
-                obj = client.ask_json(msgs, prof["digest_out"], 0.2)
-            except _OutputTruncated as e:
-                # keep what was produced before the cut-off rather than failing the whole job
-                obj = salvage_truncated_json(e.text)
-            d = prompts.digest_to_text(obj, prof["digest_cap"]) if isinstance(obj, dict) else ""
-        except (_BadJSON, _OutputTruncated, ValueError):
-            d = text[: prof["digest_cap"]]  # degrade: feed raw slice head instead of aborting
-            from_model = False
-        if d.strip():
-            digests.append(d)
-            if from_model:  # never cache the degraded fallback: a retry should get another chance
-                cache.put("digest", ck, {"d": d})
-    return digests
+            obj = client.ask_json(msgs, prof["digest_out"], 0.2)
+        except _OutputTruncated as e:
+            # keep what was produced before the cut-off rather than failing the whole job
+            obj = salvage_truncated_json(e.text)
+        d = prompts.digest_to_text(obj, prof["digest_cap"]) if isinstance(obj, dict) else ""
+    except (_BadJSON, _OutputTruncated, ValueError):
+        d = text[: prof["digest_cap"]]  # degrade: feed raw slice head instead of aborting
+        from_model = False
+    if d.strip() and from_model:  # never cache the degraded fallback: a retry should get another chance
+        cache.put("digest", ck, {"d": d})
+    return d
 
 
 def _pack_batches(digests: list[str], max_chars: int, min_batches: int = 1) -> list[list[str]]:
@@ -750,7 +894,7 @@ def _compose_batch(client: _Client, meta: dict, digs: list[str], n_min: int, n_m
     text = "\n\n".join(digs)
     msgs = prompts.compose_batch_messages(meta, text, n_min, n_max, prior, no, total, strict)
     try:
-        return _as_section_list(client.ask_json(msgs, client.profile["out_batch"]))
+        return _as_section_list(client.ask_json(msgs, client.profile["out_batch"], schema=prompts.SECTIONS_SCHEMA))
     except _OutputTruncated:
         if len(digs) > 1:  # too much for one reply: halve the input
             mid = len(digs) // 2
@@ -801,7 +945,8 @@ def _map_reduce(client: _Client, transcript: dict, meta: dict, report: _Reporter
             for b in s["blocks"]:
                 if b["type"] == "definition":
                     terms.append(f"{b['term']}: {b['text'][:140]}")
-        obj = client.ask_json(_final_messages_fit(client, meta, outline, terms), prof["final_out"])
+        obj = client.ask_json(_final_messages_fit(client, meta, outline, terms), prof["final_out"],
+                              schema=prompts.FRONT_SCHEMA)
         front = obj if isinstance(obj, dict) else {}
         if not front.get("glossary"):
             front["glossary"] = [{"term": t.split(": ", 1)[0], "definition": t.split(": ", 1)[-1]} for t in terms[:20]]
@@ -881,7 +1026,18 @@ def generate_notes(transcript: dict, *, provider: str, api_key: str, model: str 
         reserve = client.profile["reasoning_reserve"]
         fits_output = n_target * SECTION_TOKENS + 1200 + reserve <= client.profile["out_single"] * 0.9
         raw = None
-        if len(text) <= client.profile["single_chars"] and fits_output:
+        parts = _part_count(client, n_target)
+        if len(text) <= client.profile["single_chars"] and parts > 1:
+            try:
+                raw = _parallel_single(client, transcript, len(text), meta, parts, report)
+                have = len(validate_notes(raw, transcript)["sections"])
+                if have < _coverage_needed(n_target):
+                    report(12, f"Only {have} of ~{n_target} sections came back; rewriting slice by slice...")
+                    raw = None
+            except ValueError:
+                report(12, "Parallel pass was not usable; switching to the multi-step method...")
+                raw = None
+        elif len(text) <= client.profile["single_chars"] and fits_output:
             try:
                 raw = _single_pass(client, transcript, text, meta, report)
                 have = len(validate_notes(raw, transcript)["sections"])  # unusable -> ValueError

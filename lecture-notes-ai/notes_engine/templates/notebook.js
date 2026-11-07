@@ -23,7 +23,7 @@
     c.className = 'content';
     p.appendChild(c);
     pagesEl.appendChild(p);
-    var rec = { el: p, content: c, unit: unit };
+    var rec = { el: p, content: c, unit: unit, starts: [] };
     pages.push(rec);
     return rec;
   }
@@ -109,40 +109,34 @@
     if (fits(cur.content)) return;
     if (item.getAttribute('data-split') === '1' && trySplit(item, unit)) return;
     if (pageEffectivelyEmpty(cur.content, item)) { zoomFit(item, cur.content); return; }
-    // move to a fresh continuation page, dragging along keep-with-next headers directly above
+    // move to a fresh page, dragging along keep-with-next headers directly above (no orphan headings)
     cur.content.removeChild(item);
     var carry = [item];
     var kids = contentItems(cur.content);
-    while (kids.length > 1 && kids[kids.length - 1].getAttribute('data-keep') === '1' &&
-           kids[kids.length - 1].className.indexOf('sec-head') < 0) {
+    while (kids.length > 1 && kids[kids.length - 1].getAttribute('data-keep') === '1') {
       carry.unshift(kids.pop());
       cur.content.removeChild(carry[0]);
     }
+    var headMoved = carry[0].className.indexOf('sec-head') >= 0;
+    if (headMoved) { var ix = cur.starts.indexOf(unit); if (ix >= 0) cur.starts.splice(ix, 1); }
     newPageFor(unit);
-    cur.content.appendChild(contHead(unit));
+    if (headMoved) cur.starts.push(unit);
+    else cur.content.appendChild(contHead(unit));
     carry.forEach(function (el, i) {
       if (i === carry.length - 1) place(el, unit); else cur.content.appendChild(el);
     });
   }
 
-  function layoutUnit(u, z) {
-    var work = u.cloneNode(true);
+  // Units flow one after another (no forced page break per section); a unit only opens a new page
+  // when the previous page is the cover or the unit is marked data-break="1".
+  function layoutUnit(u) {
+    var work = u;
     var ul0 = work.querySelector('svg.ul');
     work._ul = ul0 ? ul0.cloneNode(true) : null;
-    newPageFor(work);
+    if (!cur || !cur.content || u.getAttribute('data-break') === '1') newPageFor(work);
+    cur.starts.push(work);
     var items = Array.prototype.slice.call(work.querySelectorAll(':scope > .item'));
-    items.forEach(function (it) {
-      if (z < 1 && !/sec-head/.test(it.className)) it.style.zoom = String(/dgm/.test(it.className) ? Math.max(0.6, z - 0.1) : z);
-      place(it, work);
-    });
-    var nxt = u.getAttribute('data-next');
-    if (nxt) {
-      var nl = document.createElement('div');
-      nl.className = 'nextline';
-      nl.setAttribute('data-next', nxt);
-      cur.el.appendChild(nl);
-    }
-    pages.forEach(function (p) { if (p.unit === work) p.unit = u; });
+    items.forEach(function (it) { place(it, work); });
   }
 
   // ---- Rough.js: python computes the layout and emits shape specs; here they are drawn hand-sketched.
@@ -202,49 +196,26 @@
         pages.push({ el: pg, content: null, unit: u });
         return;
       }
-      var start = pages.length;
-      layoutUnit(u, 1);
-      var bestN = pages.length - start, bestZ = 1;
-      if (bestN > 1) {
-        var zs = [0.95, 0.91, 0.87, 0.83, 0.8];
-        for (var i = 0; i < zs.length && bestN > 1; i++) {
-          var snap = pages.length;
-          while (pages.length > start) { var q = pages.pop(); q.el.parentNode.removeChild(q.el); }
-          layoutUnit(u, zs[i]);
-          var n = pages.length - start;
-          if (n < bestN) { bestN = n; bestZ = zs[i]; }
-          else if (n >= bestN) {
-            // not better: remember to restore best at the end
-            bestZ = bestZ;
-          }
-        }
-        // re-run with the best zoom (cheap, deterministic) so DOM reflects the chosen layout
-        while (pages.length > start) { var q2 = pages.pop(); q2.el.parentNode.removeChild(q2.el); }
-        layoutUnit(u, bestZ);
-      }
+      layoutUnit(u);
     });
     finish();
   }
 
   function finish() {
     var total = pages.length;
-    // section number -> first page index (1-based) ; also first page after the numbered sections
-    var secFirst = {}, lastNum = 0, lastIdx = 0;
+    // section number -> page (1-based) where its heading sits; also the page of the first non-section unit after them
+    var secFirst = {}, lastNum = 0, afterSections = 0;
     pages.forEach(function (p, i) {
-      var u = p.unit;
-      if (!u) return;
-      var k = u.getAttribute('data-kind');
-      var num = parseInt(u.getAttribute('data-num') || '', 10);
-      if (k === 'section' && !isNaN(num)) {
-        if (!(num in secFirst)) secFirst[num] = i + 1;
-        if (num >= lastNum) { lastNum = num; lastIdx = i + 1; }
-      }
+      (p.starts || []).forEach(function (u) {
+        var k = u.getAttribute('data-kind');
+        var num = parseInt(u.getAttribute('data-num') || '', 10);
+        if (k === 'section' && !isNaN(num)) {
+          if (!(num in secFirst)) secFirst[num] = i + 1;
+          if (num >= lastNum) lastNum = num;
+          afterSections = 0;
+        } else if (k !== 'cover' && !afterSections) afterSections = i + 1;
+      });
     });
-    var afterSections = 0;
-    for (var i = pages.length - 1; i >= 0; i--) {
-      var kk = pages[i].unit && pages[i].unit.getAttribute('data-kind');
-      if (kk === 'section') { afterSections = i + 2; break; }
-    }
     pages.forEach(function (p, i) {
       if (p.content) p.el.setAttribute('data-fill', Math.round((p.content.lastElementChild ? p.content.lastElementChild.getBoundingClientRect().bottom : 0) - p.content.getBoundingClientRect().top) + '/' + p.content.clientHeight);
       var l = document.createElement('div');
@@ -254,8 +225,7 @@
       r.className = 'foot-r';
       r.textContent = 'pg. ' + (i + 1) + ' / ' + total;
       p.el.appendChild(l); p.el.appendChild(r);
-      var nl = p.el.querySelector('.nextline');
-      if (nl) {
+      Array.prototype.forEach.call(p.el.querySelectorAll('.nextline'), function (nl) {
         var raw = nl.getAttribute('data-next');
         var m = /^\s*(?:pg\.?|page)\s*(\d+)\s*[:\-–—]?\s*(.*)$/i.exec(raw);
         var target = null, text = raw;
@@ -265,11 +235,13 @@
           else if (n === lastNum + 1 && afterSections && afterSections <= total) target = afterSections;
           text = m[2];
         }
+        // the next section usually follows right below: a pointer to the same page is just noise
+        if (target === i + 1) { nl.parentNode.removeChild(nl); return; }
         nl.textContent = '';
         nl.appendChild(document.createTextNode('next → '));
         if (target) nl.appendChild(document.createTextNode('pg. ' + target + (text ? ': ' : '')));
         nl.appendChild(document.createTextNode(text));
-      }
+      });
     });
     srcEl.parentNode.removeChild(srcEl);
     root.setAttribute('data-pages', String(total));

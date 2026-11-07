@@ -224,10 +224,10 @@ def test_pdf_overflowing_section_continues_without_clipping(sample_pdf):
     for i, (t, m, pg) in enumerate(pages, 1):
         for x0, y0, x1, y1, word, *_ in pg.get_text("words"):
             assert y1 <= pg.rect.height + 0.5 and x1 <= pg.rect.width + 0.5
-        # below the content area (1046px = 784pt) only footer / "next ->" lines may exist
+        # below the content area (1064px = 798pt) only footer lines may exist
         for blk in pg.get_text("dict")["blocks"]:
             for line in blk.get("lines", []):
-                if line["bbox"][1] > 786:
+                if line["bbox"][1] > 800:
                     ltxt = "".join(sp["text"] for sp in line["spans"])
                     assert re.search(r"notebook|pg\.|next|field notes", ltxt), (i, ltxt)
     doc.close()
@@ -270,4 +270,22 @@ def test_pdf_minimal_notes(tmp_path, notes_in):
     doc, n, pages = _check_pdf(str(out))
     assert n >= 1
     assert pages[-1][1][-1] == (str(n), str(n))
+    doc.close()
+
+
+def test_unknown_block_type_is_rendered_not_dropped():
+    h = pdf.render_html({"sections": [{"number": 2, "title": "x", "blocks": [
+        {"type": "mystery_box", "title": "Odd thing", "text": "still shown"},
+        {"type": "checklist", "items": ["alpha item", "beta item"]}]}]})
+    assert "Odd thing" in h and "still shown" in h and "alpha item" in h
+
+
+@needs_browser
+def test_pdf_sections_flow_without_forced_page_breaks(tmp_path):
+    secs = [{"number": i + 2, "title": "short %d" % i, "blocks": [{"type": "paragraph", "text": "tiny section %d." % i}]}
+            for i in range(6)]
+    out = tmp_path / "flow.pdf"
+    pdf.render_pdf({"meta": {"title": "flow"}, "sections": secs}, str(out))
+    doc = pymupdf.open(str(out))
+    assert len(doc) == 2  # cover + one page holding all six short sections
     doc.close()

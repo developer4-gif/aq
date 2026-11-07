@@ -1300,7 +1300,8 @@ def _b_bullets(b) -> str:
     if not items:
         return ""
     lis = "".join("<li>%s</li>" % rich(i) for i in items)
-    return '<div class="item blk b-bullets" data-split="1" data-minkeep="2" data-minmove="2"><ul class="sb">%s</ul></div>' % lis
+    cols = " cols2" if len(items) >= 4 and max(len(plain(i)) for i in items) <= 48 else ""
+    return '<div class="item blk b-bullets' + cols + '" data-split="1" data-minkeep="2" data-minmove="2"><ul class="sb">%s</ul></div>' % lis
 
 
 def _b_steps(b) -> str:
@@ -1374,6 +1375,18 @@ def _b_formula(b) -> str:
     return '<div class="item blk b-formula"><div class="box">%s</div></div>' % e(t)
 
 
+def _b_unknown(b) -> str:
+    """Block types this renderer does not know yet: show any text / items instead of dropping them."""
+    if _list(b.get("items")):
+        return _b_bullets(b)
+    parts = [_s(b.get(k)) for k in ("title", "term", "text", "content", "body", "definition") if _s(b.get(k))]
+    if not parts:
+        return ""
+    if len(parts) > 1:
+        return _b_paragraph({"text": "**%s** — %s" % (parts[0], " ".join(parts[1:]))})
+    return _b_paragraph({"text": parts[0]})
+
+
 def _render_blocks(blocks: list) -> list[str]:
     out, ncall = [], 0
     for b in blocks:
@@ -1400,7 +1413,7 @@ def _render_blocks(blocks: list) -> list[str]:
         elif typ == "formula":
             h = _b_formula(b)
         else:
-            h = ""
+            h = _b_unknown(b)
         if h:
             out.append(h)
     return out
@@ -1427,7 +1440,8 @@ def _takeaways(items) -> str:
     if not items:
         return ""
     lis = "".join("<li>%s</li>" % rich(i) for i in items)
-    return '<div class="item take"><div class="tt">\u2605 to remember</div><ul>%s</ul></div>' % lis
+    return ('<div class="item take" data-split="1" data-minkeep="1" data-minmove="1"><div class="tt">\u2605 to remember</div>'
+            '<ul class="sb">%s</ul></div>' % lis)
 
 
 def _recall(r) -> str:
@@ -1458,6 +1472,8 @@ def _section_unit(sec: dict, i: int) -> str:
     items.append(_takeaways(sec.get("key_takeaways")))
     items.append(_recall(sec.get("recall")))
     nxt = _s(sec.get("next"))
+    if nxt:
+        items.append('<div class="item nextline" data-next="%s">next → %s</div>' % (e(nxt), e(nxt)))
     return ('<div class="unit" data-kind="section" data-num="%s" data-title="%s" data-next="%s">%s</div>'
             % (e(num), e(title), e(nxt), "".join(x for x in items if x)))
 
@@ -1531,11 +1547,14 @@ def _cover_unit(notes: dict, title: str) -> str:
     summ = _s(cover.get("summary"))
     sticky = '<div class="cv-idea">%s</div>' % e(trunc(idea, 90)) if idea else ""
     howto = ('<div class="cv-how"><div class="rt">\u2605 recall question</div><div class="q">Q: How do I use this book?</div>'
-             'A: After each page, close it and explain the page out loud in 30 seconds. Every page ends with one recall question.</div>')
+             'A: After each page, close it and explain it out loud in 30 seconds. Every section ends with one recall question.</div>')
     summary = '<div class="cv-sum">%s</div>' % e(trunc(summ, 200)) if summ else ""
     date = _fmt_date(_s(meta.get("generated_on")))
     date_html = '<div class="cv-date">\u2014 field notes%s</div>' % (", " + e(date) if date else "")
     toc_title = "what's inside \u2014 read top to bottom"
+    keys = [_s(t) for t in _list(cover.get("takeaways")) if _s(t)][:6]
+    keys_html = ('<div class="cv-keys"><div class="rt">\u2605 key takeaways</div><ol>%s</ol></div>'
+                 % "".join("<li>%s</li>" % e(trunc(k, 220)) for k in keys)) if keys else ""
     body = (
         '<div class="page cover">' + _rings_svg() + '%s<div class="cv-in">'
         '<div class="cv-tag">%s</div><div class="cv-title" style="font-size:%dpx">%s</div>%s'
@@ -1547,7 +1566,7 @@ def _cover_unit(notes: dict, title: str) -> str:
         _cover_border_svg(), e(tagline), tsize, e(title), _underline_svg("cover-title", 600, 4.2).replace('class="ul"', 'class="cv-ul"'),
         ('<div class="cv-sub">%s</div>' % e(trunc(subtitle, 140))) if subtitle else "",
         ('<div class="cv-info">%s</div>' % e(info)) if info else "",
-        dsvg, dcap, e(toc_title), cls, toc_html, sticky, howto, summary, date_html,
+        dsvg, dcap, e(toc_title), cls, toc_html, sticky, keys_html or howto, "" if keys_html else summary, date_html,
     )
     return '<div class="unit" data-kind="cover">%s</div>' % body
 
